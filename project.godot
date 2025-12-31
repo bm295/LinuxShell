@@ -1,0 +1,22 @@
+; Engine configuration file.
+; It's best to edit this file using the editor.
+
+config_version=5
+
+[application]
+
+config/name="Football Manager Sim"
+run/main_scene="res://Main.tscn"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+
+[input]
+
+ui_accept={
+"deadzone": 0.5,
+"events": [ Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"window_id":0,"pressed":false,"keycode":4194309,"physical_keycode":13,"key_label":0,"unicode":13,"location":0,"echo":false,"script":null)
+ ]
+}
