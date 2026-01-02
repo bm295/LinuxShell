@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://csp0n7s8a5t8f"]
+[gd_scene load_steps=7 format=3 uid="uid://csp0n7s8a5t8f"]
 
 [ext_resource type="Script" path="res://Scripts/Main.cs" id="1"]
 
@@ -131,6 +131,45 @@ layout_mode = 2
 text = "League"
 theme_override_colors/font_color = Color(0.7, 0.78, 0.9, 1)
 
+[node name="StartMenuPanel" type="PanelContainer" parent="Root/Card"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("5")
+
+[node name="StartMenu" type="VBoxContainer" parent="Root/Card/StartMenuPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+
+[node name="StartTitle" type="Label" parent="Root/Card/StartMenuPanel/StartMenu"]
+layout_mode = 2
+text = "CHON CHE DO"
+theme_override_colors/font_color = Color(0.9, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 20
+
+[node name="NewGameButton" type="Button" parent="Root/Card/StartMenuPanel/StartMenu"]
+layout_mode = 2
+text = "New Game"
+theme_override_styles/normal = SubResource("3")
+theme_override_styles/hover = SubResource("4")
+theme_override_styles/pressed = SubResource("4")
+theme_override_colors/font_color = Color(0.95, 0.97, 1, 1)
+
+[node name="LoadGameButton" type="Button" parent="Root/Card/StartMenuPanel/StartMenu"]
+layout_mode = 2
+text = "Load Game"
+theme_override_styles/normal = SubResource("3")
+theme_override_styles/hover = SubResource("4")
+theme_override_styles/pressed = SubResource("4")
+theme_override_colors/font_color = Color(0.95, 0.97, 1, 1)
+
+[node name="StatusLabel" type="Label" parent="Root/Card/StartMenuPanel/StartMenu"]
+layout_mode = 2
+text = "Chon New Game hoac Load Game."
+theme_override_colors/font_color = Color(0.7, 0.78, 0.9, 1)
+
 [node name="MenuPanel" type="PanelContainer" parent="Root/Card/Layout"]
 layout_mode = 2
 theme_override_styles/panel = SubResource("5")
@@ -158,6 +197,14 @@ theme_override_colors/font_color = Color(0.95, 0.97, 1, 1)
 [node name="ResetSeasonButton" type="Button" parent="Root/Card/Layout/MenuPanel/Menu"]
 layout_mode = 2
 text = "Tao mua giai moi"
+theme_override_styles/normal = SubResource("3")
+theme_override_styles/hover = SubResource("4")
+theme_override_styles/pressed = SubResource("4")
+theme_override_colors/font_color = Color(0.95, 0.97, 1, 1)
+
+[node name="SaveGameButton" type="Button" parent="Root/Card/Layout/MenuPanel/Menu"]
+layout_mode = 2
+text = "Save Game"
 theme_override_styles/normal = SubResource("3")
 theme_override_styles/hover = SubResource("4")
 theme_override_styles/pressed = SubResource("4")
