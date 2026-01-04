@@ -188,15 +188,15 @@ theme_override_colors/font_color = Color(0.95, 0.97, 1, 1)
 
 [node name="LeagueTableButton" type="Button" parent="Root/Card/Layout/MenuPanel/Menu"]
 layout_mode = 2
-text = "Xem danh sach CLB"
+text = "Bang xep hang"
 theme_override_styles/normal = SubResource("3")
 theme_override_styles/hover = SubResource("4")
 theme_override_styles/pressed = SubResource("4")
 theme_override_colors/font_color = Color(0.95, 0.97, 1, 1)
 
-[node name="ResetSeasonButton" type="Button" parent="Root/Card/Layout/MenuPanel/Menu"]
+[node name="MyClubButton" type="Button" parent="Root/Card/Layout/MenuPanel/Menu"]
 layout_mode = 2
-text = "Tao mua giai moi"
+text = "CLB cua toi"
 theme_override_styles/normal = SubResource("3")
 theme_override_styles/hover = SubResource("4")
 theme_override_styles/pressed = SubResource("4")
