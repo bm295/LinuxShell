@@ -1,555 +1,434 @@
 using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Text.Json;
 using Godot;
-using FootballManagerSim.Models;
-using FootballManagerSim.Simulation;
 
-namespace FootballManagerSim;
+namespace ShadowSwitch;
 
-public partial class Main : Control
+public partial class Main : Node2D
 {
-    private const int ReputationBoostCost = 200_000;
-    private const int SponsorBonus = 500_000;
+    private const float MoveSpeed = 220f;
+    private const float JumpVelocity = -420f;
+    private const float Gravity = 980f;
+    private const float ClimbSpeed = 150f;
+    private const float DarkTimeLimit = 12f;
 
-    private League _league = null!;
-    private MatchSimulator _simulator = null!;
-    private RichTextLabel _output = null!;
-    private Control _outputPanel = null!;
-    private Label _subtitle = null!;
-    private LineEdit _clubNameInput = null!;
-    private Club _myClub = null!;
-    private int _myClubIndex;
-    private List<Club> _clubs = new();
-    private Control _startMenuPanel = null!;
-    private Label _startMenuStatus = null!;
-    private Control _mainLayout = null!;
-    private Control _myClubPanel = null!;
-    private FileDialog _saveDialog = null!;
-    private FileDialog _loadDialog = null!;
-    private List<ClubStanding> _standings = new();
-    private int _currentRound;
-    private readonly Random _random = new();
+    private CharacterBody2D _playerLight = null!;
+    private CharacterBody2D _playerDark = null!;
+    private Area2D _lightPlate = null!;
+    private Area2D _darkSwitch = null!;
+    private StaticBody2D _darkBridge = null!;
+    private StaticBody2D _darkDoor = null!;
+    private Area2D _goalLight = null!;
+    private Area2D _goalDark = null!;
+    private Label _statusLabel = null!;
+    private Label _timerLabel = null!;
 
-    private static readonly JsonSerializerOptions SaveOptions = new()
-    {
-        WriteIndented = true
-    };
+    private bool _isDarkActive;
+    private bool _darkDoorOpen;
+    private float _darkTimer = DarkTimeLimit;
 
     public override void _Ready()
     {
-        _simulator = new MatchSimulator();
-        _output = GetNode<RichTextLabel>("Root/Card/Layout/OutputPanel/Output");
-        _outputPanel = GetNode<Control>("Root/Card/Layout/OutputPanel");
-        _subtitle = GetNode<Label>("Root/Card/Layout/Subtitle");
-        _clubNameInput = GetNode<LineEdit>("Root/Card/Layout/MyClubPanel/MyClubContent/RenameRow/ClubNameInput");
-        _startMenuPanel = GetNode<Control>("Root/Card/StartMenuPanel");
-        _startMenuStatus = GetNode<Label>("Root/Card/StartMenuPanel/StartMenu/StatusLabel");
-        _mainLayout = GetNode<Control>("Root/Card/Layout");
-        _myClubPanel = GetNode<Control>("Root/Card/Layout/MyClubPanel");
-
-        _saveDialog = BuildSaveDialog();
-        _loadDialog = BuildLoadDialog();
-        AddChild(_saveDialog);
-        AddChild(_loadDialog);
-
-        GetNode<Button>("Root/Card/StartMenuPanel/StartMenu/NewGameButton").Pressed += OnNewGamePressed;
-        GetNode<Button>("Root/Card/StartMenuPanel/StartMenu/LoadGameButton").Pressed += OnLoadGamePressed;
-
-        GetNode<Button>("Root/Card/Layout/MenuPanel/Menu/SimulateMatchButton").Pressed += OnSimulateMatchPressed;
-        GetNode<Button>("Root/Card/Layout/MenuPanel/Menu/LeagueTableButton").Pressed += OnLeagueTablePressed;
-        GetNode<Button>("Root/Card/Layout/MenuPanel/Menu/MyClubButton").Pressed += OnMyClubPressed;
-        GetNode<Button>("Root/Card/Layout/MenuPanel/Menu/SaveGameButton").Pressed += OnSaveGamePressed;
-
-        GetNode<Button>("Root/Card/Layout/MyClubPanel/MyClubContent/MyClubActions/MyClubInfoButton").Pressed += OnMyClubInfoPressed;
-        GetNode<Button>("Root/Card/Layout/MyClubPanel/MyClubContent/MyClubActions/ImproveReputationButton").Pressed += OnImproveReputationPressed;
-        GetNode<Button>("Root/Card/Layout/MyClubPanel/MyClubContent/MyClubActions/SponsorButton").Pressed += OnSponsorPressed;
-        GetNode<Button>("Root/Card/Layout/MyClubPanel/MyClubContent/RenameRow/RenameClubButton").Pressed += OnRenameClubPressed;
-
-        GetNode<Button>("Root/Card/Layout/ExitButton").Pressed += OnExitPressed;
-
-        ShowStartMenu();
+        BuildScene();
+        UpdateWorldState();
+        UpdateHud();
     }
 
-    private void CreateNewLeague()
+    public override void _Process(double delta)
     {
-        var sample = League.Sample();
-        _clubs = sample.Clubs.ToList();
-        _league = new League(sample.Name, _clubs);
-        _myClubIndex = 0;
-        _myClub = _clubs[_myClubIndex];
-        _standings = InitializeStandings(_clubs.Count);
-        _currentRound = 0;
-        _subtitle.Text = $"League: {_league.Name}";
-        _output.Text = string.Empty;
-        _clubNameInput.Text = _myClub.Name;
-    }
-
-    private void ShowWelcome()
-    {
-        AddOutput($"Chao mung den voi {_league.Name}!");
-        AddOutput($"Ban dang quan ly CLB: {_myClub.Name}.");
-        AddOutput("Chon mot tuy chon de bat dau quan ly doi bong.");
-    }
-
-    private void ShowStartMenu()
-    {
-        _startMenuStatus.Text = "Chon New Game hoac Load Game.";
-        _startMenuPanel.Visible = true;
-        _mainLayout.Visible = false;
-    }
-
-    private void StartGameSession()
-    {
-        _startMenuPanel.Visible = false;
-        _mainLayout.Visible = true;
-        ShowMyClubScreen(false);
-    }
-
-    private void OnNewGamePressed()
-    {
-        CreateNewLeague();
-        StartGameSession();
-        ShowWelcome();
-    }
-
-    private void OnLoadGamePressed()
-    {
-        _loadDialog.PopupCentered();
-    }
-
-    private void OnSimulateMatchPressed()
-    {
-        ClearOutput();
-        if (_clubs.Count < 2)
+        if (Input.IsActionJustPressed("switch_world"))
         {
-            AddOutput("Khong du CLB de mo phong tran dau.");
-            return;
+            _isDarkActive = !_isDarkActive;
+            UpdateWorldState();
         }
 
-        ShowMyClubScreen(false);
-        var results = SimulateRound();
-        var builder = new StringBuilder();
-        builder.AppendLine($"Vong {_currentRound}:");
-        foreach (var result in results)
+        if (_isDarkActive)
         {
-            builder.AppendLine($"{result.Home.Name} {result.HomeGoals} - {result.AwayGoals} {result.Away.Name}");
-        }
-
-        AddOutput(builder.ToString().TrimEnd());
-    }
-
-    private void OnLeagueTablePressed()
-    {
-        ClearOutput();
-        ShowMyClubScreen(false);
-        var builder = new StringBuilder();
-        builder.AppendLine($"Bang xep hang (Vong {_currentRound}):");
-        builder.AppendLine(FormatStandingsHeader());
-        builder.AppendLine(FormatStandingsDivider());
-        var standings = GetSortedStandings();
-        for (var index = 0; index < standings.Count; index++)
-        {
-            var entry = standings[index];
-            var club = _clubs[entry.Index];
-            var goalDiff = entry.Standing.GoalsFor - entry.Standing.GoalsAgainst;
-            builder.AppendLine(FormatStandingsRow(
-                index + 1,
-                club.Name,
-                entry.Standing.Played,
-                entry.Standing.Wins,
-                entry.Standing.Draws,
-                entry.Standing.Losses,
-                goalDiff,
-                entry.Standing.Points));
-        }
-
-        AddOutput(builder.ToString().TrimEnd());
-    }
-
-    private void OnMyClubPressed()
-    {
-        ClearOutput();
-        ShowMyClubScreen(!_myClubPanel.Visible);
-    }
-
-    private void OnMyClubInfoPressed()
-    {
-        AddOutput($"CLB cua ban: {_myClub.Name} | Uy tin {_myClub.Reputation} | Ngan sach {FormatCurrency(_myClub.Budget)}");
-        if (!string.IsNullOrWhiteSpace(_myClub.Formation))
-        {
-            AddOutput($"So do: {_myClub.Formation}");
-        }
-
-        if (_myClub.Lineup.Count > 0)
-        {
-            AddOutput("Doi hinh mac dinh:\n" + string.Join("\n", _myClub.Lineup));
-        }
-
-        if (_myClub.Squad.Count > 0)
-        {
-            var players = _myClub.Squad.Select(player => $"{player.Name} ({player.Position}, {player.Rating})");
-            AddOutput("Danh sach cau thu:\n" + string.Join("\n", players));
-        }
-    }
-
-    private void OnImproveReputationPressed()
-    {
-        if (_myClub.Budget < ReputationBoostCost)
-        {
-            AddOutput("Ngan sach khong du de tang uy tin.");
-            return;
-        }
-
-        UpdateMyClub(_myClub with
-        {
-            Budget = _myClub.Budget - ReputationBoostCost,
-            Reputation = _myClub.Reputation + 1
-        });
-
-        AddOutput($"Da chi {FormatCurrency(ReputationBoostCost)} de tang uy tin. Uy tin hien tai: {_myClub.Reputation}.");
-    }
-
-    private void OnSponsorPressed()
-    {
-        UpdateMyClub(_myClub with
-        {
-            Budget = _myClub.Budget + SponsorBonus
-        });
-
-        AddOutput($"Ky hop dong tai tro thanh cong! Ngan sach moi: {FormatCurrency(_myClub.Budget)}.");
-    }
-
-    private void OnRenameClubPressed()
-    {
-        var newName = _clubNameInput.Text.Trim();
-        if (string.IsNullOrWhiteSpace(newName))
-        {
-            AddOutput("Vui long nhap ten CLB moi.");
-            return;
-        }
-
-        UpdateMyClub(_myClub with { Name = newName });
-        AddOutput($"Da doi ten CLB thanh: {_myClub.Name}.");
-    }
-
-    private void OnSaveGamePressed()
-    {
-        _saveDialog.PopupCentered();
-    }
-
-    private void OnExitPressed()
-    {
-        GetTree().Quit();
-    }
-
-    private void AddOutput(string message)
-    {
-        if (!string.IsNullOrWhiteSpace(_output.Text))
-        {
-            _output.Text += "\n\n";
-        }
-
-        _output.Text += message;
-        _output.ScrollToLine(_output.GetLineCount());
-    }
-
-    private void ClearOutput()
-    {
-        _output.Text = string.Empty;
-    }
-
-    private bool TryLoadGame(string savePath, out string message)
-    {
-        if (!File.Exists(savePath))
-        {
-            message = "Chua co file save. Hay tao game moi va luu game truoc.";
-            return false;
-        }
-
-        try
-        {
-            var json = File.ReadAllText(savePath);
-            var data = JsonSerializer.Deserialize<SaveGameData>(json, SaveOptions);
-            if (data == null || data.Clubs.Count == 0)
+            _darkTimer = Mathf.Max(0f, _darkTimer - (float)delta);
+            if (_darkTimer <= 0f)
             {
-                message = "File save khong hop le.";
-                return false;
+                _statusLabel.Text = "Bong toi da nuot ban! Nhan R de choi lai.";
             }
-
-            var clubs = data.Clubs.Select(ToClub).ToList();
-            _clubs = clubs;
-            _league = new League(data.LeagueName, _clubs);
-            _myClubIndex = 0;
-            _myClub = _clubs[_myClubIndex];
-            _standings = LoadStandings(data, clubs.Count);
-            _currentRound = data.CurrentRound;
-            _subtitle.Text = $"League: {_league.Name}";
-            _output.Text = string.Empty;
-            _clubNameInput.Text = _myClub.Name;
-            message = "Da load game thanh cong.";
-            return true;
-        }
-        catch (Exception ex)
-        {
-            message = $"Khong the load game: {ex.Message}";
-            return false;
-        }
-    }
-
-    private FileDialog BuildSaveDialog()
-    {
-        var dialog = new FileDialog
-        {
-            FileMode = FileDialog.FileModeEnum.SaveFile,
-            Access = FileDialog.AccessEnum.Filesystem,
-            Title = "Chon thu muc luu game",
-            CurrentFile = "savegame.json",
-            UseNativeDialog = true
-        };
-        dialog.Filters = new[] { "*.json ; Save game" };
-        dialog.FileSelected += OnSaveFileSelected;
-        return dialog;
-    }
-
-    private FileDialog BuildLoadDialog()
-    {
-        var dialog = new FileDialog
-        {
-            FileMode = FileDialog.FileModeEnum.OpenFile,
-            Access = FileDialog.AccessEnum.Filesystem,
-            Title = "Chon file load game",
-            UseNativeDialog = true
-        };
-        dialog.Filters = new[] { "*.json ; Save game" };
-        dialog.FileSelected += OnLoadFileSelected;
-        return dialog;
-    }
-
-    private void OnSaveFileSelected(string path)
-    {
-        var data = new SaveGameData
-        {
-            LeagueName = _league.Name,
-            Clubs = _clubs.Select(ToClubData).ToList(),
-            CurrentRound = _currentRound,
-            Standings = _standings.Select(ToStandingData).ToList()
-        };
-
-        var json = JsonSerializer.Serialize(data, SaveOptions);
-        File.WriteAllText(path, json);
-        AddOutput($"Da luu game vao: {path}");
-    }
-
-    private void OnLoadFileSelected(string path)
-    {
-        if (!TryLoadGame(path, out var message))
-        {
-            _startMenuStatus.Text = message;
-            return;
-        }
-
-        StartGameSession();
-        AddOutput(message);
-    }
-
-    private static ClubData ToClubData(Club club)
-    {
-        return new ClubData
-        {
-            Name = club.Name,
-            Reputation = club.Reputation,
-            Budget = club.Budget,
-            Formation = club.Formation,
-            Squad = club.Squad.ToList(),
-            Lineup = club.Lineup.ToList()
-        };
-    }
-
-    private static Club ToClub(ClubData data)
-    {
-        return new Club(
-            data.Name,
-            data.Reputation,
-            data.Budget,
-            data.Formation,
-            data.Squad,
-            data.Lineup);
-    }
-
-    private static string FormatCurrency(int amount)
-    {
-        return amount.ToString("N0", CultureInfo.InvariantCulture);
-    }
-
-    private static string FormatStandingsHeader()
-    {
-        return $"{Pad("Hang", 4)} | {Pad("CLB", 20)} | {Pad("Tran", 4)} | {Pad("Thang", 5)} | {Pad("Hoa", 3)} | {Pad("Thua", 4)} | {Pad("HS", 3)} | {Pad("Diem", 4)}";
-    }
-
-    private static string FormatStandingsDivider()
-    {
-        return $"{new string('-', 4)}-+-{new string('-', 20)}-+-{new string('-', 4)}-+-{new string('-', 5)}-+-{new string('-', 3)}-+-{new string('-', 4)}-+-{new string('-', 3)}-+-{new string('-', 4)}";
-    }
-
-    private static string FormatStandingsRow(
-        int rank,
-        string clubName,
-        int played,
-        int wins,
-        int draws,
-        int losses,
-        int goalDiff,
-        int points)
-    {
-        return $"{Pad(rank.ToString(), 4)} | {Pad(clubName, 20)} | {Pad(played.ToString(), 4)} | {Pad(wins.ToString(), 5)} | {Pad(draws.ToString(), 3)} | {Pad(losses.ToString(), 4)} | {Pad(goalDiff.ToString(), 3)} | {Pad(points.ToString(), 4)}";
-    }
-
-    private static string Pad(string value, int width)
-    {
-        if (value.Length >= width)
-        {
-            return value[..width];
-        }
-
-        return value.PadRight(width);
-    }
-
-    private void UpdateMyClub(Club updatedClub)
-    {
-        _myClub = updatedClub;
-        _clubs[_myClubIndex] = updatedClub;
-        _clubNameInput.Text = updatedClub.Name;
-    }
-
-    private static List<ClubStanding> InitializeStandings(int count)
-    {
-        var standings = new List<ClubStanding>(count);
-        for (var i = 0; i < count; i++)
-        {
-            standings.Add(new ClubStanding());
-        }
-
-        return standings;
-    }
-
-    private List<MatchResult> SimulateRound()
-    {
-        var matches = new List<MatchResult>();
-        var shuffled = _clubs.OrderBy(_ => _random.Next()).ToList();
-        for (var i = 0; i + 1 < shuffled.Count; i += 2)
-        {
-            var home = shuffled[i];
-            var away = shuffled[i + 1];
-            var result = _simulator.PlayMatch(home, away);
-            matches.Add(result);
-            UpdateStandings(result);
-        }
-
-        _currentRound += 1;
-        return matches;
-    }
-
-    private void UpdateStandings(MatchResult result)
-    {
-        var homeIndex = _clubs.IndexOf(result.Home);
-        var awayIndex = _clubs.IndexOf(result.Away);
-        if (homeIndex < 0 || awayIndex < 0)
-        {
-            return;
-        }
-
-        var homeStanding = _standings[homeIndex];
-        var awayStanding = _standings[awayIndex];
-
-        homeStanding.Played += 1;
-        awayStanding.Played += 1;
-        homeStanding.GoalsFor += result.HomeGoals;
-        homeStanding.GoalsAgainst += result.AwayGoals;
-        awayStanding.GoalsFor += result.AwayGoals;
-        awayStanding.GoalsAgainst += result.HomeGoals;
-
-        if (result.HomeGoals > result.AwayGoals)
-        {
-            homeStanding.Wins += 1;
-            awayStanding.Losses += 1;
-        }
-        else if (result.HomeGoals < result.AwayGoals)
-        {
-            awayStanding.Wins += 1;
-            homeStanding.Losses += 1;
         }
         else
         {
-            homeStanding.Draws += 1;
-            awayStanding.Draws += 1;
+            _darkTimer = Mathf.Min(DarkTimeLimit, _darkTimer + (float)delta * 0.6f);
+        }
+
+        if (Input.IsKeyPressed(Key.R) && _darkTimer <= 0f)
+        {
+            GetTree().ReloadCurrentScene();
+        }
+
+        UpdatePuzzleState();
+        CheckWin();
+        UpdateHud();
+    }
+
+    public override void _PhysicsProcess(double delta)
+    {
+        if (_darkTimer <= 0f)
+        {
+            return;
+        }
+
+        SimulatePlayer(_playerLight, delta, 0);
+        SimulatePlayer(_playerDark, delta, 1);
+    }
+
+    private void SimulatePlayer(CharacterBody2D player, double delta, uint worldLayer)
+    {
+        var velocity = player.Velocity;
+        float direction = Input.GetAxis("move_left", "move_right");
+        velocity.X = direction * MoveSpeed;
+
+        bool isClimbing = false;
+        foreach (var area in player.GetOverlappingAreas())
+        {
+            if (area is Area2D ladder && ladder.IsInGroup("ladder"))
+            {
+                isClimbing = true;
+                break;
+            }
+        }
+
+        if (isClimbing)
+        {
+            float climbDir = Input.GetAxis("climb_up", "climb_down");
+            velocity.Y = climbDir * ClimbSpeed;
+            if (Input.IsActionJustPressed("jump"))
+            {
+                velocity.Y = JumpVelocity * 0.8f;
+            }
+        }
+        else
+        {
+            velocity.Y += Gravity * (float)delta;
+            if (player.IsOnFloor() && Input.IsActionJustPressed("jump"))
+            {
+                velocity.Y = JumpVelocity;
+            }
+        }
+
+        player.Velocity = velocity;
+        player.MoveAndSlide();
+
+        // Keep players inside their world section.
+        var minX = worldLayer == 0 ? 60f : 700f;
+        var maxX = worldLayer == 0 ? 620f : 1260f;
+        player.Position = new Vector2(Mathf.Clamp(player.Position.X, minX, maxX), Mathf.Min(player.Position.Y, 650f));
+    }
+
+    private void UpdatePuzzleState()
+    {
+        bool platePressed = _lightPlate.OverlapsBody(_playerLight);
+        SetBridgeEnabled(platePressed);
+
+        bool canToggleDoor = _darkSwitch.OverlapsBody(_playerDark) && Input.IsActionJustPressed("interact");
+        if (canToggleDoor)
+        {
+            _darkDoorOpen = !_darkDoorOpen;
+            _darkDoor.ProcessMode = _darkDoorOpen ? ProcessModeEnum.Disabled : ProcessModeEnum.Inherit;
+            _darkDoor.CollisionLayer = _darkDoorOpen ? 0u : 2u;
+            _darkDoor.CollisionMask = _darkDoorOpen ? 0u : 8u;
+            _statusLabel.Text = _darkDoorOpen
+                ? "Cong bong toi dang mo!"
+                : "Cong bong toi dong lai!";
         }
     }
 
-    private List<(int Index, ClubStanding Standing)> GetSortedStandings()
+    private void SetBridgeEnabled(bool enabled)
     {
-        return _standings
-            .Select((standing, index) => (Index: index, Standing: standing))
-            .OrderByDescending(entry => entry.Standing.Points)
-            .ThenByDescending(entry => entry.Standing.GoalsFor - entry.Standing.GoalsAgainst)
-            .ThenByDescending(entry => entry.Standing.GoalsFor)
-            .ToList();
+        _darkBridge.ProcessMode = enabled ? ProcessModeEnum.Inherit : ProcessModeEnum.Disabled;
+        _darkBridge.CollisionLayer = enabled ? 2u : 0u;
+        _darkBridge.CollisionMask = enabled ? 8u : 0u;
     }
 
-    private void ShowMyClubScreen(bool showMyClub)
+    private void CheckWin()
     {
-        _myClubPanel.Visible = showMyClub;
-        _outputPanel.Visible = true;
-    }
-
-    private List<ClubStanding> LoadStandings(SaveGameData data, int clubCount)
-    {
-        if (data.Standings.Count != clubCount)
+        if (_goalLight.OverlapsBody(_playerLight) && _goalDark.OverlapsBody(_playerDark))
         {
-            return InitializeStandings(clubCount);
+            _statusLabel.Text = "Ban da dua ca hai nhan vat den dich. Chien thang!";
         }
-
-        return data.Standings.Select(FromStandingData).ToList();
     }
 
-    private static ClubStandingData ToStandingData(ClubStanding standing)
+    private void UpdateWorldState()
     {
-        return new ClubStandingData
+        Modulate = _isDarkActive ? new Color(0.82f, 0.82f, 1f) : Colors.White;
+        _statusLabel.Text = _isDarkActive
+            ? "Dang o THE GIOI BONG TOI (gioi han thoi gian)."
+            : "Dang o THE GIOI ANH SANG.";
+    }
+
+    private void UpdateHud()
+    {
+        _timerLabel.Text = $"Dark Timer: {Mathf.Ceil(_darkTimer):0}s";
+    }
+
+    private void BuildScene()
+    {
+        var bg = new ColorRect
         {
-            Played = standing.Played,
-            Wins = standing.Wins,
-            Draws = standing.Draws,
-            Losses = standing.Losses,
-            GoalsFor = standing.GoalsFor,
-            GoalsAgainst = standing.GoalsAgainst
+            Color = new Color(0.07f, 0.08f, 0.12f),
+            Size = new Vector2(1280, 720)
         };
+        AddChild(bg);
+
+        CreateWorldFrame(new Vector2(40, 70), new Color(0.2f, 0.2f, 0.35f), "ANH SANG");
+        CreateWorldFrame(new Vector2(680, 70), new Color(0.14f, 0.1f, 0.2f), "BONG TOI");
+
+        BuildLightWorld();
+        BuildDarkWorld();
+        BuildHud();
     }
 
-    private static ClubStanding FromStandingData(ClubStandingData data)
+    private void BuildLightWorld()
     {
-        return new ClubStanding
+        CreatePlatform(new Vector2(320, 640), new Vector2(520, 32), 1, new Color(0.75f, 0.78f, 0.9f));
+        CreatePlatform(new Vector2(180, 520), new Vector2(170, 24), 1, new Color(0.85f, 0.9f, 1f));
+        CreatePlatform(new Vector2(410, 450), new Vector2(140, 24), 1, new Color(0.85f, 0.9f, 1f));
+        CreateLadder(new Vector2(510, 545), new Vector2(24, 190), new Color(0.5f, 0.8f, 1f));
+
+        _playerLight = CreatePlayer(new Vector2(120, 590), new Color(0.98f, 0.95f, 0.5f), 4u, 1u, "PlayerLight");
+        _lightPlate = CreateTrigger(new Vector2(430, 618), new Vector2(56, 12), new Color(0.3f, 1f, 0.5f), "Nut giu cau cho bong toi");
+        _goalLight = CreateGoal(new Vector2(560, 407), new Color(0.7f, 1f, 0.7f));
+    }
+
+    private void BuildDarkWorld()
+    {
+        CreatePlatform(new Vector2(960, 640), new Vector2(520, 32), 2, new Color(0.3f, 0.26f, 0.4f));
+        CreatePlatform(new Vector2(810, 530), new Vector2(140, 24), 2, new Color(0.4f, 0.35f, 0.5f));
+        CreatePlatform(new Vector2(1110, 470), new Vector2(140, 24), 2, new Color(0.4f, 0.35f, 0.5f));
+        CreateLadder(new Vector2(1020, 550), new Vector2(24, 180), new Color(0.7f, 0.4f, 1f));
+
+        _darkBridge = CreatePlatform(new Vector2(980, 390), new Vector2(180, 20), 2, new Color(0.6f, 0.45f, 0.95f));
+        SetBridgeEnabled(false);
+
+        _darkDoor = CreatePlatform(new Vector2(1160, 565), new Vector2(28, 130), 2, new Color(0.8f, 0.2f, 0.35f));
+        _darkSwitch = CreateTrigger(new Vector2(835, 505), new Vector2(46, 14), new Color(0.9f, 0.5f, 0.2f), "Nhan E de mo cong");
+
+        _playerDark = CreatePlayer(new Vector2(760, 590), new Color(0.75f, 0.55f, 1f), 8u, 2u, "PlayerDark");
+        _goalDark = CreateGoal(new Vector2(1160, 370), new Color(0.75f, 0.95f, 1f));
+    }
+
+    private void BuildHud()
+    {
+        var ui = new CanvasLayer();
+        AddChild(ui);
+
+        var title = new Label
         {
-            Played = data.Played,
-            Wins = data.Wins,
-            Draws = data.Draws,
-            Losses = data.Losses,
-            GoalsFor = data.GoalsFor,
-            GoalsAgainst = data.GoalsAgainst
+            Text = "SHADOW SWITCH - WASD/Arrow di chuyen, Space switch, E tuong tac",
+            Position = new Vector2(20, 15),
+            Modulate = new Color(0.95f, 0.96f, 1f)
         };
+        ui.AddChild(title);
+
+        _statusLabel = new Label
+        {
+            Position = new Vector2(20, 40),
+            Modulate = new Color(0.8f, 0.9f, 1f)
+        };
+        ui.AddChild(_statusLabel);
+
+        _timerLabel = new Label
+        {
+            Position = new Vector2(20, 62),
+            Modulate = new Color(1f, 0.84f, 0.84f)
+        };
+        ui.AddChild(_timerLabel);
     }
 
-    private sealed class ClubStanding
+    private void CreateWorldFrame(Vector2 position, Color tint, string name)
     {
-        public int Played { get; set; }
-        public int Wins { get; set; }
-        public int Draws { get; set; }
-        public int Losses { get; set; }
-        public int GoalsFor { get; set; }
-        public int GoalsAgainst { get; set; }
-        public int Points => Wins * 3 + Draws;
+        var panel = new ColorRect
+        {
+            Position = position,
+            Size = new Vector2(560, 620),
+            Color = tint
+        };
+        AddChild(panel);
+
+        var label = new Label
+        {
+            Text = name,
+            Position = position + new Vector2(10, 8),
+            Modulate = Colors.White
+        };
+        AddChild(label);
+    }
+
+    private StaticBody2D CreatePlatform(Vector2 center, Vector2 size, uint collisionLayer, Color color)
+    {
+        var body = new StaticBody2D
+        {
+            CollisionLayer = collisionLayer,
+            CollisionMask = collisionLayer == 1 ? 4u : 8u,
+            Position = center
+        };
+
+        var collider = new CollisionShape2D
+        {
+            Shape = new RectangleShape2D { Size = size }
+        };
+        body.AddChild(collider);
+
+        var visual = new Polygon2D
+        {
+            Polygon = new[]
+            {
+                new Vector2(-size.X / 2f, -size.Y / 2f),
+                new Vector2(size.X / 2f, -size.Y / 2f),
+                new Vector2(size.X / 2f, size.Y / 2f),
+                new Vector2(-size.X / 2f, size.Y / 2f)
+            },
+            Color = color
+        };
+        body.AddChild(visual);
+        AddChild(body);
+        return body;
+    }
+
+    private CharacterBody2D CreatePlayer(Vector2 position, Color color, uint layer, uint mask, string nodeName)
+    {
+        var player = new CharacterBody2D
+        {
+            Name = nodeName,
+            Position = position,
+            CollisionLayer = layer,
+            CollisionMask = mask
+        };
+
+        var collider = new CollisionShape2D
+        {
+            Shape = new RectangleShape2D { Size = new Vector2(28, 44) }
+        };
+        player.AddChild(collider);
+
+        var visual = new Polygon2D
+        {
+            Polygon = new[]
+            {
+                new Vector2(-14, -22),
+                new Vector2(14, -22),
+                new Vector2(14, 22),
+                new Vector2(-14, 22)
+            },
+            Color = color
+        };
+        player.AddChild(visual);
+
+        player.SetMaxSlides(4);
+        player.SetSafeMargin(0.08f);
+        AddChild(player);
+        return player;
+    }
+
+    private Area2D CreateLadder(Vector2 center, Vector2 size, Color color)
+    {
+        var ladder = new Area2D
+        {
+            CollisionLayer = 0,
+            CollisionMask = 12,
+            Position = center,
+            Monitoring = true,
+            Monitorable = true
+        };
+        ladder.AddToGroup("ladder");
+
+        var collider = new CollisionShape2D
+        {
+            Shape = new RectangleShape2D { Size = size }
+        };
+        ladder.AddChild(collider);
+
+        var visual = new Polygon2D
+        {
+            Polygon = new[]
+            {
+                new Vector2(-size.X / 2f, -size.Y / 2f),
+                new Vector2(size.X / 2f, -size.Y / 2f),
+                new Vector2(size.X / 2f, size.Y / 2f),
+                new Vector2(-size.X / 2f, size.Y / 2f)
+            },
+            Color = color with { A = 0.6f }
+        };
+        ladder.AddChild(visual);
+
+        AddChild(ladder);
+        return ladder;
+    }
+
+    private Area2D CreateTrigger(Vector2 center, Vector2 size, Color color, string hint)
+    {
+        var trigger = new Area2D
+        {
+            Position = center,
+            CollisionLayer = 0,
+            CollisionMask = 12,
+            Monitoring = true,
+            Monitorable = true
+        };
+        var collider = new CollisionShape2D
+        {
+            Shape = new RectangleShape2D { Size = size }
+        };
+        trigger.AddChild(collider);
+
+        var visual = new Polygon2D
+        {
+            Polygon = new[]
+            {
+                new Vector2(-size.X / 2f, -size.Y / 2f),
+                new Vector2(size.X / 2f, -size.Y / 2f),
+                new Vector2(size.X / 2f, size.Y / 2f),
+                new Vector2(-size.X / 2f, size.Y / 2f)
+            },
+            Color = color
+        };
+        trigger.AddChild(visual);
+
+        var label = new Label
+        {
+            Text = hint,
+            Position = center + new Vector2(-50, -28),
+            Modulate = Colors.White
+        };
+        AddChild(label);
+
+        AddChild(trigger);
+        return trigger;
+    }
+
+    private Area2D CreateGoal(Vector2 center, Color color)
+    {
+        var goal = new Area2D
+        {
+            Position = center,
+            CollisionLayer = 0,
+            CollisionMask = 12,
+            Monitoring = true,
+            Monitorable = true
+        };
+        var collider = new CollisionShape2D
+        {
+            Shape = new RectangleShape2D { Size = new Vector2(54, 54) }
+        };
+        goal.AddChild(collider);
+
+        var visual = new Polygon2D
+        {
+            Polygon = new[]
+            {
+                new Vector2(-27, -27),
+                new Vector2(27, -27),
+                new Vector2(27, 27),
+                new Vector2(-27, 27)
+            },
+            Color = color with { A = 0.7f }
+        };
+        goal.AddChild(visual);
+
+        AddChild(goal);
+        return goal;
     }
 }
