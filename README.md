@@ -1,39 +1,50 @@
-# Football Manager-Style Simulation (Godot + C#)
+# Shadow Switch (Godot 4 + C#)
 
-This repository is now a starting point for a Football Manager-style management game.
-The project uses **Godot 4** with **C#** to provide a strong UI toolkit, fast iteration,
-robust tooling, and a good fit for data-heavy simulation gameplay.
+`Shadow Switch` la prototype game 2D puzzle-platformer, nơi người chơi điều khiển **2 nhân vật song song** trong hai thế giới:
 
-## Why C# + Godot
-- **Management-game friendly:** Data-centric simulation and UI-heavy workflows.
-- **Excellent tooling:** Strong typing, IDE support, and debugging.
-- **Open-source engine:** Godot is lightweight and flexible for custom tooling.
+- 🌞 **Ánh sáng**
+- 🌑 **Bóng tối**
 
-## Project Structure
-- `project.godot`: Godot project configuration.
-- `Main.tscn`: Entry scene and UI layout.
-- `Scripts/`: Core gameplay and simulation code.
-- `Data/`: Placeholder for JSON/YAML databases (players, clubs, leagues).
-- `Archived/`: Legacy scripts moved from the old repo.
+Hai thế giới có bố cục tương tự nhưng có khác biệt về nền tảng, công tắc và đường đi.
 
-## Getting Started
-1. Install [Godot 4.x (.NET)](https://godotengine.org/download).
-2. Open the project in Godot by selecting this repository folder.
-3. Run `Main.tscn`.
-4. Use the in-game menu to simulate matches, view the club list, reset the season, or exit.
+## Core Gameplay
 
-## UI Menu (Current)
-- **Mo phong tran dau:** Simulate a match between two clubs.
-- **Xem danh sach CLB:** Display the league club list.
-- **Tao mua giai moi:** Create a fresh league instance.
-- **CLB cua toi:** View and manage your club.
-  - **Thong tin CLB:** Show current club name, reputation, and budget.
-  - **Tang uy tin (-200k):** Spend budget to raise reputation.
-  - **Ky tai tro (+500k):** Increase budget with a sponsor deal.
-  - **Doi ten:** Rename your club using the input field.
-- **Thoat:** Quit the game.
+- Di chuyển trái/phải, nhảy, leo thang.
+- Nhấn `Space` để chuyển trạng thái giữa thế giới Ánh sáng và Bóng tối.
+- Ở thế giới Bóng tối có **giới hạn thời gian**.
+- Cơ chế liên kết puzzle:
+  - Nút ở Ánh sáng kích hoạt cầu ở Bóng tối.
+  - Công tắc ở Bóng tối mở/đóng cổng.
+- Mục tiêu: đưa **cả 2 nhân vật** đến vùng đích tương ứng.
 
-## Next Steps
-- Build a data importer (players/clubs/leagues) from `Data/`.
-- Add season scheduling, match simulation, finances, and scouting.
-- Build UI screens (squad, tactics, fixtures, transfers).
+## Controls
+
+- `A / D` hoặc `← / →`: Di chuyển
+- `W` hoặc `Enter`: Nhảy
+- `W / S` hoặc `↑ / ↓`: Leo thang
+- `Space`: Switch Ánh sáng ↔ Bóng tối
+- `E`: Tương tác công tắc
+- `R`: Chơi lại khi hết thời gian ở Bóng tối
+
+## Technical Notes
+
+- Dự án dùng Godot 4 (.NET) và C#.
+- Scene chính là `Main.tscn`.
+- Toàn bộ prototype gameplay được dựng bằng code trong `Scripts/Main.cs`:
+  - Tạo world frame, platform, trigger, ladder, goal.
+  - Điều khiển movement cho 2 `CharacterBody2D`.
+  - Puzzle logic world-link.
+  - Dark timer + trạng thái thắng/thua.
+
+## Run
+
+1. Mở project bằng **Godot 4.x (.NET)**.
+2. Run scene `Main.tscn`.
+3. Hoàn thành puzzle bằng cách phối hợp hai thế giới.
+
+## Gợi ý mở rộng
+
+- Thêm quái chỉ tồn tại ở Bóng tối.
+- Mỗi world có kỹ năng riêng.
+- Hệ thống tính điểm theo thời gian.
+- Local co-op: 2 người điều khiển 2 nhân vật.
