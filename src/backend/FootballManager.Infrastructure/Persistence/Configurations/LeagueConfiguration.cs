@@ -19,6 +19,10 @@ public sealed class LeagueConfiguration : IEntityTypeConfiguration<League>
             .HasColumnName("name")
             .IsRequired();
 
+        builder.Property(league => league.IsTemplate)
+            .HasColumnName("is_template")
+            .IsRequired();
+
         builder.Property(league => league.CreatedAt)
             .HasColumnName("created_at")
             .HasColumnType("timestamp with time zone")
@@ -27,6 +31,11 @@ public sealed class LeagueConfiguration : IEntityTypeConfiguration<League>
         builder.HasMany(league => league.Clubs)
             .WithOne(club => club.League)
             .HasForeignKey(club => club.LeagueId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(league => league.Seasons)
+            .WithOne(season => season.League)
+            .HasForeignKey(season => season.LeagueId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

@@ -34,7 +34,7 @@ public sealed class DatabaseInitializer(FootballManagerDbContext dbContext, ILog
 
     private async Task SeedAsync(CancellationToken cancellationToken)
     {
-        if (await dbContext.Leagues.AnyAsync(cancellationToken))
+        if (await dbContext.Leagues.AnyAsync(league => league.IsTemplate, cancellationToken))
         {
             return;
         }

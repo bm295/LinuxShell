@@ -1,0 +1,140 @@
+.dashboard-shell {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.dashboard-panel,
+.dashboard-hero,
+.stat-card,
+.summary-panel,
+.squad-panel {
+  padding: 1.75rem;
+}
+
+.dashboard-hero {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 1.5rem;
+}
+
+.label {
+  margin: 0 0 0.5rem;
+  color: var(--accent-strong);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.75rem;
+}
+
+h2,
+h3 {
+  margin: 0;
+}
+
+.supporting-copy,
+.feedback,
+.feedback-error,
+.next-fixture span,
+.stat-label,
+.summary-metrics span,
+.player-row span {
+  color: var(--muted);
+}
+
+.next-fixture {
+  display: grid;
+  align-content: start;
+  gap: 0.35rem;
+}
+
+.next-fixture strong {
+  font-size: 1.15rem;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.stat-card {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.stat-value {
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1;
+  font-weight: 700;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 0.95fr 1.35fr;
+  gap: 1rem;
+}
+
+.summary-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.summary-metrics div,
+.player-row {
+  padding: 1rem;
+  border-radius: 1rem;
+  background: rgba(255, 252, 247, 0.76);
+}
+
+.summary-metrics strong {
+  display: block;
+  font-size: 1.6rem;
+}
+
+.squad-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.player-count {
+  padding: 0.55rem 0.85rem;
+  border-radius: 999px;
+  background: rgba(33, 48, 58, 0.08);
+}
+
+.player-table {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.player-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.player-row strong,
+.player-row span {
+  display: block;
+}
+
+.shirt-number {
+  min-width: 3.5rem;
+  font-weight: 700;
+  color: var(--accent-strong);
+}
+
+.feedback-error {
+  color: #8b341f;
+}
+
+@media (max-width: 900px) {
+  .dashboard-hero,
+  .dashboard-grid,
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}

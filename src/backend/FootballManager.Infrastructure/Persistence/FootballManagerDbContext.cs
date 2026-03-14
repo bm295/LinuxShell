@@ -13,6 +13,12 @@ public sealed class FootballManagerDbContext(DbContextOptions<FootballManagerDbC
 
     public DbSet<Player> Players => Set<Player>();
 
+    public DbSet<Season> Seasons => Set<Season>();
+
+    public DbSet<Fixture> Fixtures => Set<Fixture>();
+
+    public DbSet<GameSave> GameSaves => Set<GameSave>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(FootballManagerDbContext).Assembly);

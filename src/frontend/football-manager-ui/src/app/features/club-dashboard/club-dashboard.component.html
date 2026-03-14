@@ -1,0 +1,97 @@
+<section class="dashboard-shell">
+  @if (isLoading()) {
+    <div class="panel dashboard-panel">
+      <p class="feedback">Loading club dashboard...</p>
+    </div>
+  } @else if (errorMessage()) {
+    <div class="panel dashboard-panel">
+      <p class="feedback feedback-error">{{ errorMessage() }}</p>
+    </div>
+  } @else {
+    @if (dashboard(); as data) {
+      <section class="panel dashboard-hero">
+        <div>
+          <p class="label">Club Dashboard</p>
+          <h2>{{ data.clubName }}</h2>
+          <p class="supporting-copy">Your first phase-1 save is active. This dashboard shows the selected club, current season standing, next fixture, and squad overview.</p>
+        </div>
+
+        <div class="next-fixture">
+          <p class="label">Next Fixture</p>
+          @if (data.nextFixture) {
+            <strong>{{ data.nextFixture.homeClub }} vs {{ data.nextFixture.awayClub }}</strong>
+            <span>Round {{ data.nextFixture.roundNumber }}</span>
+            <span>{{ data.nextFixture.scheduledAt | date: 'mediumDate' }}</span>
+          } @else {
+            <span>No upcoming fixture scheduled.</span>
+          }
+        </div>
+      </section>
+
+      <section class="stats-grid">
+        <article class="panel stat-card">
+          <span class="stat-value">{{ data.budget | currency }}</span>
+          <span class="stat-label">Budget</span>
+        </article>
+        <article class="panel stat-card">
+          <span class="stat-value">{{ data.leaguePosition }}</span>
+          <span class="stat-label">League Position</span>
+        </article>
+        <article class="panel stat-card">
+          <span class="stat-value">{{ data.points }}</span>
+          <span class="stat-label">Points</span>
+        </article>
+        <article class="panel stat-card">
+          <span class="stat-value">{{ data.squadSummary.totalPlayers }}</span>
+          <span class="stat-label">Squad Size</span>
+        </article>
+      </section>
+
+      <section class="dashboard-grid">
+        <article class="panel summary-panel">
+          <p class="label">Squad Summary</p>
+          <div class="summary-metrics">
+            <div>
+              <strong>{{ data.squadSummary.goalkeepers }}</strong>
+              <span>Goalkeepers</span>
+            </div>
+            <div>
+              <strong>{{ data.squadSummary.defenders }}</strong>
+              <span>Defenders</span>
+            </div>
+            <div>
+              <strong>{{ data.squadSummary.midfielders }}</strong>
+              <span>Midfielders</span>
+            </div>
+            <div>
+              <strong>{{ data.squadSummary.forwards }}</strong>
+              <span>Forwards</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel squad-panel">
+          <div class="squad-head">
+            <div>
+              <p class="label">Squad Overview</p>
+              <h3>Registered players</h3>
+            </div>
+            <span class="player-count">{{ data.squadSummary.players.length }} players</span>
+          </div>
+
+          <div class="player-table">
+            @for (player of data.squadSummary.players; track player.squadNumber) {
+              <div class="player-row">
+                <span class="shirt-number">#{{ player.squadNumber }}</span>
+                <div>
+                  <strong>{{ player.name }}</strong>
+                  <span>{{ player.position | titlecase }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        </article>
+      </section>
+    }
+  }
+</section>

@@ -35,7 +35,7 @@ public static class SeedDataFactory
 
     public static League CreateInitialLeague()
     {
-        var league = new League("Founders League");
+        var league = new League("Founders League", isTemplate: true);
 
         for (var clubIndex = 0; clubIndex < ClubNames.Length; clubIndex++)
         {

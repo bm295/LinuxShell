@@ -2,35 +2,41 @@
   <div class="panel-head">
     <div>
       <p class="label">New Game</p>
-      <h2>Seeded world overview</h2>
+      <h2>Choose your club</h2>
     </div>
 
-    <button type="button" class="ghost" (click)="loadSummary()">Reload</button>
+    <button type="button" class="ghost" (click)="loadClubs()">Reload clubs</button>
   </div>
 
   @if (isLoading()) {
-    <p class="feedback">Loading bootstrap data...</p>
+    <p class="feedback">Loading available clubs...</p>
   } @else if (errorMessage()) {
     <p class="feedback feedback-error">{{ errorMessage() }}</p>
-  } @else if (summary()) {
-    <div class="stats">
-      <article>
-        <span class="value">{{ summary()?.leagueCount }}</span>
-        <span class="caption">League</span>
-      </article>
-      <article>
-        <span class="value">{{ summary()?.clubCount }}</span>
-        <span class="caption">Clubs</span>
-      </article>
-      <article>
-        <span class="value">{{ summary()?.playerCount }}</span>
-        <span class="caption">Players</span>
-      </article>
+  } @else {
+    <p class="feedback">Pick one of the fictional clubs below. Starting a new game creates a new season, copies the seeded squads, generates fixtures, and redirects to the dashboard.</p>
+
+    <div class="club-grid">
+      @for (club of clubs(); track club.id) {
+        <button
+          type="button"
+          class="club-card"
+          [class.club-card-active]="selectedClubId() === club.id"
+          (click)="selectClub(club.id)">
+          <span class="club-name">{{ club.name }}</span>
+          <span class="club-budget">{{ club.budget | currency }}</span>
+        </button>
+      }
     </div>
 
-    <div class="roadmap">
-      <p>Bootstrap seeding creates one league, eight clubs, and twenty players per club.</p>
-      <p>The actual "create new game" workflow starts in the next phase once dashboard and save flows exist.</p>
+    <div class="cta-row">
+      <div class="selection-summary">
+        <p class="label">Selected Club</p>
+        <strong>{{ selectedClub()?.name ?? 'None selected' }}</strong>
+      </div>
+
+      <button type="button" class="start-button" [disabled]="isStarting() || !selectedClubId()" (click)="startGame()">
+        {{ isStarting() ? 'Starting game...' : 'Start new game' }}
+      </button>
     </div>
   }
 </section>

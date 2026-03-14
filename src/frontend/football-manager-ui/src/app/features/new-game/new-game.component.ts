@@ -1,37 +1,70 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { CurrencyPipe } from '@angular/common';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Router } from '@angular/router';
 
 import { BootstrapApiService } from '../../core/services/bootstrap-api.service';
-import { BootstrapSummary } from '../../models/bootstrap-summary';
+import { ClubOption } from '../../models/club-option';
 
 @Component({
   selector: 'app-new-game',
   standalone: true,
+  imports: [CurrencyPipe],
   templateUrl: './new-game.component.html',
   styleUrl: './new-game.component.scss'
 })
 export class NewGameComponent implements OnInit {
   private readonly api = inject(BootstrapApiService);
+  private readonly router = inject(Router);
 
-  readonly summary = signal<BootstrapSummary | null>(null);
+  readonly clubs = signal<ClubOption[]>([]);
+  readonly selectedClubId = signal<string | null>(null);
+  readonly selectedClub = computed(() => this.clubs().find((club) => club.id === this.selectedClubId()) ?? null);
   readonly isLoading = signal(true);
+  readonly isStarting = signal(false);
   readonly errorMessage = signal<string | null>(null);
 
   ngOnInit(): void {
-    this.loadSummary();
+    this.loadClubs();
   }
 
-  loadSummary(): void {
+  loadClubs(): void {
     this.isLoading.set(true);
     this.errorMessage.set(null);
 
-    this.api.getBootstrapSummary().subscribe({
-      next: (summary) => {
-        this.summary.set(summary);
+    this.api.getAvailableClubs().subscribe({
+      next: (clubs) => {
+        this.clubs.set(clubs);
+        this.selectedClubId.set(clubs[0]?.id ?? null);
         this.isLoading.set(false);
       },
       error: () => {
-        this.errorMessage.set('Bootstrap summary is unavailable until the backend and database finish starting.');
+        this.errorMessage.set('Club selection is unavailable until the backend and database finish starting.');
         this.isLoading.set(false);
+      }
+    });
+  }
+
+  selectClub(clubId: string): void {
+    this.selectedClubId.set(clubId);
+  }
+
+  startGame(): void {
+    const clubId = this.selectedClubId();
+    if (!clubId) {
+      this.errorMessage.set('Select a club before starting a game.');
+      return;
+    }
+
+    this.isStarting.set(true);
+    this.errorMessage.set(null);
+
+    this.api.createNewGame(clubId).subscribe({
+      next: (response) => {
+        this.router.navigate(['/dashboard', response.gameId]);
+      },
+      error: () => {
+        this.errorMessage.set('The game could not be created. Verify the backend is running and try again.');
+        this.isStarting.set(false);
       }
     });
   }

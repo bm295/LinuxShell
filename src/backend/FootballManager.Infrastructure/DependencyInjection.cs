@@ -2,6 +2,7 @@ using FootballManager.Application.Services;
 using FootballManager.Infrastructure.Persistence;
 using FootballManager.Infrastructure.Seeding;
 using FootballManager.Infrastructure.Services;
+using FootballManager.Infrastructure.Services.Game;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,6 +19,8 @@ public static class DependencyInjection
 
         services.AddDbContext<FootballManagerDbContext>(options => options.UseNpgsql(connectionString));
         services.AddScoped<IBootstrapSummaryService, BootstrapSummaryService>();
+        services.AddScoped<IGameSetupService, GameSetupService>();
+        services.AddScoped<IClubDashboardService, ClubDashboardService>();
         services.AddScoped<DatabaseInitializer>();
 
         return services;

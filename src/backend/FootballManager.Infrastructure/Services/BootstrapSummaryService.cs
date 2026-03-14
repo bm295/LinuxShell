@@ -9,9 +9,11 @@ public sealed class BootstrapSummaryService(FootballManagerDbContext dbContext) 
 {
     public async Task<BootstrapSummaryDto> GetSummaryAsync(CancellationToken cancellationToken = default)
     {
-        var leagueCount = await dbContext.Leagues.CountAsync(cancellationToken);
-        var clubCount = await dbContext.Clubs.CountAsync(cancellationToken);
-        var playerCount = await dbContext.Players.CountAsync(cancellationToken);
+        var leagueCount = await dbContext.Leagues.CountAsync(league => league.IsTemplate, cancellationToken);
+        var clubCount = await dbContext.Clubs.CountAsync(club => club.League != null && club.League.IsTemplate, cancellationToken);
+        var playerCount = await dbContext.Players.CountAsync(
+            player => player.Club != null && player.Club.League != null && player.Club.League.IsTemplate,
+            cancellationToken);
 
         return new BootstrapSummaryDto(leagueCount, clubCount, playerCount);
     }
