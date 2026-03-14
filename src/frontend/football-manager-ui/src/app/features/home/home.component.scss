@@ -1,0 +1,87 @@
+.home-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 1.5rem;
+}
+
+.status-card,
+.notes-card {
+  padding: 1.75rem;
+  border-radius: 1.5rem;
+  background: rgba(255, 252, 247, 0.76);
+}
+
+.status-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.label {
+  margin: 0 0 0.5rem;
+  color: var(--accent-strong);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.75rem;
+}
+
+h2 {
+  margin: 0;
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+}
+
+.status-pill {
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  background: rgba(33, 48, 58, 0.08);
+  text-transform: capitalize;
+}
+
+.status-pill-online {
+  background: rgba(42, 109, 87, 0.14);
+  color: #1d5b47;
+}
+
+.status-pill-offline {
+  background: rgba(144, 53, 34, 0.14);
+  color: #8b341f;
+}
+
+.status-copy,
+.status-meta,
+ul {
+  color: var(--muted);
+}
+
+.status-copy {
+  margin: 1rem 0;
+  font-size: 1rem;
+}
+
+.status-meta {
+  margin: 0 0 1.25rem;
+}
+
+.action {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.9rem 1.2rem;
+  background: var(--accent-strong);
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+ul {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.8rem;
+}
+
+@media (max-width: 800px) {
+  .home-grid {
+    grid-template-columns: 1fr;
+  }
+}

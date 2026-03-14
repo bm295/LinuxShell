@@ -1,14 +1,22 @@
-# Godot 4
+# Legacy project artifacts
 .godot/
 .import/
 .export/
-export_presets.cfg
-
-# Godot C#/.NET
 .mono/
+Archived/
+Scripts/
+
+# .NET
 bin/
 obj/
+.config/
 
-# Editor/IDE
+# Node / Angular
+node_modules/
+.angular/
+dist/
+coverage/
+
+# Editor / IDE
 .vs/
 .vscode/

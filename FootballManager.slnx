@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/backend/">
+    <Project Path="src/backend/FootballManager.Api/FootballManager.Api.csproj" />
+    <Project Path="src/backend/FootballManager.Application/FootballManager.Application.csproj" />
+    <Project Path="src/backend/FootballManager.Domain/FootballManager.Domain.csproj" />
+    <Project Path="src/backend/FootballManager.Infrastructure/FootballManager.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/FootballManager.Api.IntegrationTests/FootballManager.Api.IntegrationTests.csproj" />
+    <Project Path="tests/FootballManager.Domain.Tests/FootballManager.Domain.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,31 @@
+<section class="panel home-grid">
+  <article class="status-card">
+    <div class="status-header">
+      <div>
+        <p class="label">Service Check</p>
+        <h2>{{ statusLabel() }}</h2>
+      </div>
+
+      <span class="status-pill" [class.status-pill-online]="requestState() === 'online'" [class.status-pill-offline]="requestState() === 'offline'">
+        {{ requestState() }}
+      </span>
+    </div>
+
+    <p class="status-copy">{{ statusMessage() }}</p>
+
+    @if (lastChecked(); as checkedAt) {
+      <p class="status-meta">Last checked {{ checkedAt | date: 'mediumTime' }}</p>
+    }
+
+    <button type="button" class="action" (click)="refresh()">Refresh health status</button>
+  </article>
+
+  <article class="notes-card">
+    <p class="label">Bootstrap Scope</p>
+    <ul>
+      <li>Angular 19 frontend routed between Home and New Game.</li>
+      <li>.NET 10 backend exposing `/api/health` and bootstrap summary endpoints.</li>
+      <li>PostgreSQL persistence with EF Core migrations and startup seeding.</li>
+    </ul>
+  </article>
+</section>

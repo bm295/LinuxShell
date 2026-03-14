@@ -1,0 +1,36 @@
+<section class="panel new-game-panel">
+  <div class="panel-head">
+    <div>
+      <p class="label">New Game</p>
+      <h2>Seeded world overview</h2>
+    </div>
+
+    <button type="button" class="ghost" (click)="loadSummary()">Reload</button>
+  </div>
+
+  @if (isLoading()) {
+    <p class="feedback">Loading bootstrap data...</p>
+  } @else if (errorMessage()) {
+    <p class="feedback feedback-error">{{ errorMessage() }}</p>
+  } @else if (summary()) {
+    <div class="stats">
+      <article>
+        <span class="value">{{ summary()?.leagueCount }}</span>
+        <span class="caption">League</span>
+      </article>
+      <article>
+        <span class="value">{{ summary()?.clubCount }}</span>
+        <span class="caption">Clubs</span>
+      </article>
+      <article>
+        <span class="value">{{ summary()?.playerCount }}</span>
+        <span class="caption">Players</span>
+      </article>
+    </div>
+
+    <div class="roadmap">
+      <p>Bootstrap seeding creates one league, eight clubs, and twenty players per club.</p>
+      <p>The actual "create new game" workflow starts in the next phase once dashboard and save flows exist.</p>
+    </div>
+  }
+</section>

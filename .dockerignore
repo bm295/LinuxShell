@@ -1,0 +1,11 @@
+.git
+.gitignore
+.godot
+Archived
+Scripts
+**/bin
+**/obj
+**/node_modules
+**/.angular
+**/dist
+**/coverage

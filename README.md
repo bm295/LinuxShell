@@ -1,50 +1,199 @@
-# Shadow Switch (Godot 4 + C#)
+# Football Manager Bootstrap
 
-`Shadow Switch` la prototype game 2D puzzle-platformer, nơi người chơi điều khiển **2 nhân vật song song** trong hai thế giới:
+Phase 0 converts the repository into a monorepo with:
 
-- 🌞 **Ánh sáng**
-- 🌑 **Bóng tối**
+- Angular 19 frontend
+- .NET 10 backend
+- PostgreSQL database
+- EF Core migrations
+- Seeded league, clubs, and players
 
-Hai thế giới có bố cục tương tự nhưng có khác biệt về nền tảng, công tắc và đường đi.
+## Repository Layout
 
-## Core Gameplay
+```text
+src/
+  backend/
+    FootballManager.Api
+    FootballManager.Application
+    FootballManager.Domain
+    FootballManager.Infrastructure
+  frontend/
+    football-manager-ui
+tests/
+docs/
+docker/
+```
 
-- Di chuyển trái/phải, nhảy, leo thang.
-- Nhấn `Space` để chuyển trạng thái giữa thế giới Ánh sáng và Bóng tối.
-- Ở thế giới Bóng tối có **giới hạn thời gian**.
-- Cơ chế liên kết puzzle:
-  - Nút ở Ánh sáng kích hoạt cầu ở Bóng tối.
-  - Công tắc ở Bóng tối mở/đóng cổng.
-- Mục tiêu: đưa **cả 2 nhân vật** đến vùng đích tương ứng.
+## Prerequisites
 
-## Controls
+Install these before setting up the repo:
 
-- `A / D` hoặc `← / →`: Di chuyển
-- `W` hoặc `Enter`: Nhảy
-- `W / S` hoặc `↑ / ↓`: Leo thang
-- `Space`: Switch Ánh sáng ↔ Bóng tối
-- `E`: Tương tác công tắc
-- `R`: Chơi lại khi hết thời gian ở Bóng tối
+- Git
+- .NET 10 SDK
+- Node.js 22.x and npm
+- Docker Desktop
 
-## Technical Notes
+If you want to run without Docker, also install:
 
-- Dự án dùng Godot 4 (.NET) và C#.
-- Scene chính là `Main.tscn`.
-- Toàn bộ prototype gameplay được dựng bằng code trong `Scripts/Main.cs`:
-  - Tạo world frame, platform, trigger, ladder, goal.
-  - Điều khiển movement cho 2 `CharacterBody2D`.
-  - Puzzle logic world-link.
-  - Dark timer + trạng thái thắng/thua.
+- PostgreSQL 17 or another local PostgreSQL instance
 
-## Run
+## Setup Step By Step
 
-1. Mở project bằng **Godot 4.x (.NET)**.
-2. Run scene `Main.tscn`.
-3. Hoàn thành puzzle bằng cách phối hợp hai thế giới.
+Follow these steps once after cloning the repository.
 
-## Gợi ý mở rộng
+### 1. Clone the repository
 
-- Thêm quái chỉ tồn tại ở Bóng tối.
-- Mỗi world có kỹ năng riêng.
-- Hệ thống tính điểm theo thời gian.
-- Local co-op: 2 người điều khiển 2 nhân vật.
+```bash
+git clone <your-repo-url>
+cd LinuxShell
+```
+
+### 2. Restore local .NET tools
+
+This restores `dotnet-ef` from the tool manifest.
+
+```bash
+dotnet tool restore
+```
+
+### 3. Restore backend dependencies
+
+```bash
+dotnet restore FootballManager.slnx
+```
+
+### 4. Install frontend dependencies
+
+```bash
+cd src/frontend/football-manager-ui
+npm install
+cd ../../..
+```
+
+### 5. Optional verification after setup
+
+```bash
+dotnet build FootballManager.slnx
+cd src/frontend/football-manager-ui
+npm run build
+cd ../../..
+```
+
+At this point the repository is installed and ready to run.
+
+## Run Step By Step After Installing
+
+Use either Docker or local development.
+
+### Option A: Run with Docker
+
+This is the easiest way to run the full stack.
+
+#### 1. Start Docker Desktop
+
+Make sure Docker Desktop is running before continuing.
+
+#### 2. Start all services
+
+From the repository root:
+
+```bash
+docker compose up --build
+```
+
+#### 3. Open the application
+
+- Frontend: http://localhost:4200
+- Backend health: http://localhost:8080/api/health
+- Bootstrap summary: http://localhost:8080/api/bootstrap/summary
+
+#### 4. Stop the stack
+
+Press `Ctrl + C` in the terminal, then run:
+
+```bash
+docker compose down
+```
+
+### Option B: Run locally without Docker
+
+Use this if you want to run backend and frontend directly on your machine.
+
+#### 1. Start PostgreSQL
+
+Create or use a database with these settings:
+
+- Database: `football_manager`
+- User: `postgres`
+- Password: `postgres`
+- Port: `5432`
+
+The default backend connection string expects exactly those values.
+
+#### 2. Start the backend
+
+From the repository root:
+
+```bash
+dotnet run --project src/backend/FootballManager.Api
+```
+
+The API applies migrations and seeds data automatically on startup.
+
+#### 3. Start the frontend
+
+Open a second terminal and run:
+
+```bash
+cd src/frontend/football-manager-ui
+npm start
+```
+
+The Angular dev server proxies `/api` to `http://localhost:8080`.
+
+#### 4. Open the application
+
+- Frontend: http://localhost:4200
+- Backend health: http://localhost:8080/api/health
+- Bootstrap summary: http://localhost:8080/api/bootstrap/summary
+
+## Seed Data
+
+Startup seeding creates:
+
+- 1 league
+- 8 clubs
+- 20 players per club
+
+## Tests
+
+Run the backend build and tests:
+
+```bash
+dotnet test FootballManager.slnx
+```
+
+Build the frontend:
+
+```bash
+cd src/frontend/football-manager-ui
+npm run build
+```
+
+## Migrations
+
+The repository includes a local EF tool manifest:
+
+```bash
+dotnet tool restore
+dotnet ef migrations list --project src/backend/FootballManager.Infrastructure --startup-project src/backend/FootballManager.Api
+```
+
+## Architecture
+
+The backend follows a lightweight hexagonal structure:
+
+- `FootballManager.Domain`: entities and domain rules
+- `FootballManager.Application`: contracts and service interfaces
+- `FootballManager.Infrastructure`: EF Core, persistence, seeders, implementations
+- `FootballManager.Api`: REST controllers and composition root
