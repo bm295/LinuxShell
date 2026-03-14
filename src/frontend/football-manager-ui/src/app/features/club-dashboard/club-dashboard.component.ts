@@ -2,6 +2,7 @@ import { CurrencyPipe, DatePipe, TitleCasePipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
+import { ActiveGameService } from '../../core/services/active-game.service';
 import { BootstrapApiService } from '../../core/services/bootstrap-api.service';
 import { ClubDashboard } from '../../models/club-dashboard';
 
@@ -14,6 +15,7 @@ import { ClubDashboard } from '../../models/club-dashboard';
 })
 export class ClubDashboardComponent implements OnInit {
   private readonly api = inject(BootstrapApiService);
+  private readonly activeGameService = inject(ActiveGameService);
   private readonly route = inject(ActivatedRoute);
 
   readonly dashboard = signal<ClubDashboard | null>(null);
@@ -39,6 +41,7 @@ export class ClubDashboardComponent implements OnInit {
     this.api.getClubDashboard(gameId).subscribe({
       next: (dashboard) => {
         this.dashboard.set(dashboard);
+        this.activeGameService.syncFromDashboard(gameId, dashboard);
         this.isLoading.set(false);
       },
       error: () => {

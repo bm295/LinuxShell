@@ -1,5 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+
+import { ActiveGameService } from './core/services/active-game.service';
 
 @Component({
   selector: 'app-root',
@@ -9,8 +11,19 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
   styleUrl: './app.component.scss'
 })
 export class AppComponent {
-  readonly navigation = [
-    { label: 'Home', path: '/' },
-    { label: 'New Game', path: '/new-game' }
-  ];
+  private readonly activeGameService = inject(ActiveGameService);
+
+  readonly navigation = computed(() => {
+    const items = [
+      { label: 'Home', path: '/' },
+      { label: 'New Game', path: '/new-game' }
+    ];
+    const activeGame = this.activeGameService.activeGame();
+
+    if (activeGame) {
+      items.push({ label: 'Club Dashboard', path: `/dashboard/${activeGame.gameId}` });
+    }
+
+    return items;
+  });
 }

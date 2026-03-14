@@ -33,12 +33,14 @@ public sealed class GameFlowTests
         var createdGame = await createResponse.Content.ReadFromJsonAsync<CreateNewGameResponseDto>();
         Assert.NotNull(createdGame);
         Assert.Equal("Northbridge FC", createdGame.SelectedClub);
+        Assert.False(string.IsNullOrWhiteSpace(createdGame.SeasonName));
 
         var dashboard = await client.GetFromJsonAsync<ClubDashboardDto>(
             $"/api/club/dashboard?gameId={createdGame.GameId}");
 
         Assert.NotNull(dashboard);
         Assert.Equal("Northbridge FC", dashboard.ClubName);
+        Assert.Equal(createdGame.SeasonName, dashboard.SeasonName);
         Assert.Equal(20, dashboard.SquadSummary.TotalPlayers);
         Assert.NotNull(dashboard.NextFixture);
     }

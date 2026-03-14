@@ -21,7 +21,76 @@ The system must provide a simple but complete management gameplay loop.
 
 ---
 
-# 3. Core Gameplay Loop
+# 3. Home Page and Navigation
+
+The system must provide a home page that acts as the main entry point before and during gameplay.
+
+The home page must communicate:
+
+- game title and theme
+- current game status
+- primary actions available to the player
+- clear navigation to unlocked management areas
+
+The home page layout should include:
+
+- a top header with game title and primary menu
+- a main hero area with the primary call to action
+- summary cards for current save information and key club status
+- quick links to the main game areas
+- a responsive layout that stacks cleanly on smaller screens
+
+The home page presentation after the new game flow is introduced must:
+
+- feel like part of the football management game, not a technical product landing page
+- emphasize club identity, season progression, match stakes, and management choices
+- avoid using backend health messages, setup instructions, or developer-oriented copy as primary home page content
+
+The top menu must support the following navigation model:
+
+- Home
+- New Game
+- Load Game
+- Club Dashboard
+- Squad
+- Match Center
+- League Table
+- Fixtures
+- Transfer Market
+- Finances
+
+Menu items may be hidden or disabled until the related feature is implemented or until a game save exists.
+
+The home page interaction flow must support:
+
+1. First visit:
+   - display product title, short game description, and a primary `Start New Game` action
+   - any technical or system status messaging must be secondary and should not dominate the page once gameplay exists
+2. New game flow:
+   - selecting `Start New Game` opens the club selection flow
+   - after club selection and game creation, the player is redirected to the club dashboard
+3. Continue flow:
+   - when an active save exists, the home page must show a `Continue` action that returns the player to the latest in-progress view or club dashboard
+4. Load flow:
+   - selecting `Load Game` opens the available saves
+   - after a save is loaded, the home page refreshes to show the selected save summary
+5. In-game navigation:
+   - each summary card or quick action on the home page must deep-link to the relevant game area
+   - returning to the home page must preserve the current game context
+
+When a save exists, the home page should summarize:
+
+- managed club
+- current season
+- league position
+- next fixture
+- budget
+- squad status
+- latest important actions or results
+
+---
+
+# 4. Core Gameplay Loop
 
 The gameplay loop must follow these steps:
 
@@ -35,7 +104,7 @@ The gameplay loop must follow these steps:
 
 ---
 
-# 4. Game Start
+# 5. Game Start
 
 The game must allow the user to:
 
@@ -53,7 +122,7 @@ When starting a new game, the system must initialize:
 
 ---
 
-# 5. Club Dashboard
+# 6. Club Dashboard
 
 The club dashboard must display:
 
@@ -69,7 +138,7 @@ The club dashboard must display:
 
 ---
 
-# 6. Squad Management
+# 7. Squad Management
 
 The user must be able to:
 
@@ -98,7 +167,7 @@ Each player must include:
 
 ---
 
-# 7. Tactical Management
+# 8. Tactical Management
 
 The system must allow the player to configure tactics.
 
@@ -118,7 +187,7 @@ Tactics should influence match simulation results.
 
 ---
 
-# 8. Match Simulation
+# 9. Match Simulation
 
 Users must be able to simulate the next scheduled match.
 
@@ -146,12 +215,12 @@ After simulation, the system must update:
 
 ---
 
-# 9. League System
+# 10. League System
 
 The game must include:
 
 - One fictional league
-- 8–12 clubs
+- 8-12 clubs
 - Home and away fixtures
 
 League standings must track:
@@ -167,7 +236,7 @@ League standings must track:
 
 ---
 
-# 10. Transfers
+# 11. Transfers
 
 The game must include a simple transfer system.
 
@@ -185,7 +254,7 @@ Transfer rules:
 
 ---
 
-# 11. Club Finances
+# 12. Club Finances
 
 The game must track:
 
@@ -199,7 +268,7 @@ The system must display a financial overview.
 
 ---
 
-# 12. Season Progression
+# 13. Season Progression
 
 The season must progress fixture by fixture.
 
@@ -217,7 +286,7 @@ The user must be able to:
 
 ---
 
-# 13. Save / Load Game
+# 14. Save / Load Game
 
 The game must allow:
 

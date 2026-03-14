@@ -1,5 +1,6 @@
 export interface ClubDashboard {
   clubName: string;
+  seasonName: string;
   budget: number;
   leaguePosition: number;
   points: number;

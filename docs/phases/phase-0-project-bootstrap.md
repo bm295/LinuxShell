@@ -1,4 +1,4 @@
-# Phase 0 — Project Bootstrap
+# Phase 0 - Project Bootstrap
 
 ## Goal
 
@@ -124,6 +124,28 @@ services:
 postgres  
 backend  
 frontend
+
+---
+
+## 7 Home Page Update
+
+The home page in this phase is a minimal landing page.
+
+Layout:
+
+- header with game title
+- simple top menu with `Home` and `New Game`
+- primary content area with short product description
+- backend status card fed by `GET /api/health`
+
+Interaction flow:
+
+1 Open the application
+2 Home page requests backend health
+3 Status is shown as available or unavailable
+4 User can navigate to the `New Game` page, which is a placeholder at this stage
+
+Do not expose gameplay summaries yet because no game session exists in this phase.
 
 ---
 

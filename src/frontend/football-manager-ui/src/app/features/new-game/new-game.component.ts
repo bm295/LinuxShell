@@ -2,6 +2,7 @@ import { CurrencyPipe } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
+import { ActiveGameService } from '../../core/services/active-game.service';
 import { BootstrapApiService } from '../../core/services/bootstrap-api.service';
 import { ClubOption } from '../../models/club-option';
 
@@ -14,6 +15,7 @@ import { ClubOption } from '../../models/club-option';
 })
 export class NewGameComponent implements OnInit {
   private readonly api = inject(BootstrapApiService);
+  private readonly activeGameService = inject(ActiveGameService);
   private readonly router = inject(Router);
 
   readonly clubs = signal<ClubOption[]>([]);
@@ -60,6 +62,7 @@ export class NewGameComponent implements OnInit {
 
     this.api.createNewGame(clubId).subscribe({
       next: (response) => {
+        this.activeGameService.setFromCreate(response);
         this.router.navigate(['/dashboard', response.gameId]);
       },
       error: () => {

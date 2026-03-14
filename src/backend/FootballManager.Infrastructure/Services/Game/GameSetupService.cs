@@ -70,6 +70,6 @@ public sealed class GameSetupService(FootballManagerDbContext dbContext) : IGame
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        return new CreateNewGameResponseDto(gameSave.Id, selectedClub.Name, season.Id);
+        return new CreateNewGameResponseDto(gameSave.Id, selectedClub.Name, season.Id, season.Name);
     }
 }

@@ -1,31 +1,128 @@
-<section class="panel home-grid">
-  <article class="status-card">
-    <div class="status-header">
-      <div>
-        <p class="label">Service Check</p>
-        <h2>{{ statusLabel() }}</h2>
+<section class="home-layout">
+  <article class="panel intro-card">
+    <p class="label">{{ heroLabel() }}</p>
+    <h1>{{ heroTitle() }}</h1>
+    <p class="intro-copy">{{ heroCopy() }}</p>
+
+    <div class="cta-row">
+      <a routerLink="/new-game" class="primary-link">Start New Game</a>
+
+      @if (activeGame()) {
+        <a [routerLink]="dashboardLink()" class="ghost-link">Continue to Dashboard</a>
+      }
+    </div>
+  </article>
+
+  @if (activeGame()) {
+    <article class="panel pulse-card">
+      <p class="label">Season Pulse</p>
+
+      @if (summaryState() === 'loading') {
+        <p class="supporting-copy">The club staff are preparing your latest briefing.</p>
+      } @else if (summaryState() === 'error') {
+        <p class="supporting-copy notes-error">{{ summaryMessage() }}</p>
+      } @else {
+        <h2>{{ activeDashboard()?.seasonName ?? activeGame()?.seasonName ?? 'Current Season' }}</h2>
+        <div class="pulse-grid">
+          <article>
+            <span class="summary-label">Budget</span>
+            <strong>{{ (activeDashboard()?.budget ?? 0) | currency }}</strong>
+          </article>
+          <article>
+            <span class="summary-label">Position</span>
+            <strong>{{ activeDashboard()?.leaguePosition ?? '-' }}</strong>
+          </article>
+          <article>
+            <span class="summary-label">Points</span>
+            <strong>{{ activeDashboard()?.points ?? 0 }}</strong>
+          </article>
+        </div>
+      }
+    </article>
+
+    <article class="panel save-card">
+      <div class="save-header">
+        <div>
+          <p class="label">Active Save</p>
+          <h2>{{ activeDashboard()?.clubName ?? activeGame()?.selectedClub }}</h2>
+        </div>
+
+        @if (summaryState() === 'ready') {
+          <a [routerLink]="dashboardLink()" class="inline-link">Open dashboard</a>
+        }
       </div>
 
-      <span class="status-pill" [class.status-pill-online]="requestState() === 'online'" [class.status-pill-offline]="requestState() === 'offline'">
-        {{ requestState() }}
-      </span>
-    </div>
+      @if (summaryState() === 'loading') {
+        <p class="notes-copy">Loading current save summary...</p>
+      } @else if (summaryState() === 'error') {
+        <p class="notes-copy notes-error">{{ summaryMessage() }}</p>
+      } @else {
+        <p class="notes-copy">
+          The campaign is underway. Review the club's identity, the current season, and the next challenge before you return to the dashboard.
+        </p>
 
-    <p class="status-copy">{{ statusMessage() }}</p>
+        <div class="summary-grid">
+          <article>
+            <span class="summary-label">Selected Club</span>
+            <strong>{{ activeDashboard()?.clubName ?? activeGame()?.selectedClub }}</strong>
+          </article>
+          <article>
+            <span class="summary-label">Season</span>
+            <strong>{{ activeDashboard()?.seasonName ?? activeGame()?.seasonName ?? 'Season pending' }}</strong>
+          </article>
+          <article>
+            <span class="summary-label">Next Fixture</span>
+            <strong>{{ nextFixtureLabel() }}</strong>
+            @if (activeDashboard()?.nextFixture?.scheduledAt; as fixtureDate) {
+              <span class="fixture-date">{{ fixtureDate | date: 'EEE, d MMM' }}</span>
+            }
+          </article>
+        </div>
+      }
+    </article>
+  } @else {
+    <article class="panel spotlight-card">
+      <p class="label">League Spotlight</p>
+      <h2>Pick the badge. Own the season.</h2>
+      <p class="notes-copy">
+        Every club offers a different starting point, but the pressure starts the moment you accept the job.
+      </p>
 
-    @if (lastChecked(); as checkedAt) {
-      <p class="status-meta">Last checked {{ checkedAt | date: 'mediumTime' }}</p>
-    }
+      @if (clubPreviewState() === 'loading') {
+        <p class="supporting-copy">Scouting the clubs for your first career move...</p>
+      } @else if (clubPreviewState() === 'error') {
+        <p class="supporting-copy notes-error">{{ clubPreviewMessage() }}</p>
+      } @else {
+        <div class="club-preview-grid">
+          @for (club of featuredClubs(); track club.id) {
+            <article>
+              <strong>{{ club.name }}</strong>
+              <span>{{ club.budget | currency }}</span>
+            </article>
+          }
+        </div>
+      }
+    </article>
 
-    <button type="button" class="action" (click)="refresh()">Refresh health status</button>
-  </article>
-
-  <article class="notes-card">
-    <p class="label">Bootstrap Scope</p>
-    <ul>
-      <li>Angular 19 frontend routed between Home and New Game.</li>
-      <li>.NET 10 backend exposing `/api/health` and bootstrap summary endpoints.</li>
-      <li>PostgreSQL persistence with EF Core migrations and startup seeding.</li>
-    </ul>
-  </article>
+    <article class="panel journey-card">
+      <p class="label">Your First Season</p>
+      <div class="journey-grid">
+        <article>
+          <span class="summary-label">Clubs Ready</span>
+          <strong>{{ clubPreview().length || 8 }}</strong>
+          <p>Choose the club identity that fits the manager you want to become.</p>
+        </article>
+        <article>
+          <span class="summary-label">Your Objective</span>
+          <strong>Build momentum</strong>
+          <p>Start a new career, take control of the squad, and push toward the top of the league.</p>
+        </article>
+        <article>
+          <span class="summary-label">Next Step</span>
+          <strong>Enter New Game</strong>
+          <p>Pick a club and move directly into the phase-1 dashboard flow.</p>
+        </article>
+      </div>
+    </article>
+  }
 </section>

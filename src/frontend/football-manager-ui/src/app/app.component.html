@@ -4,12 +4,12 @@
       <span class="brand-mark">FM</span>
       <span>
         <strong>Football Manager</strong>
-        <small>Phase 0 Bootstrap</small>
+        <small>Manager Career</small>
       </span>
     </a>
 
     <nav class="nav">
-      @for (item of navigation; track item.path) {
+      @for (item of navigation(); track item.path) {
         <a
           [routerLink]="item.path"
           class="nav-link"
@@ -22,14 +22,6 @@
   </header>
 
   <main class="content">
-    <section class="hero">
-      <p class="eyebrow">Monorepo bootstrap</p>
-      <h1>Angular, .NET, PostgreSQL, and seeded data in one stack.</h1>
-      <p class="hero-copy">
-        This phase establishes the runtime foundation. Gameplay flows land in later phases.
-      </p>
-    </section>
-
     <router-outlet />
   </main>
 </div>

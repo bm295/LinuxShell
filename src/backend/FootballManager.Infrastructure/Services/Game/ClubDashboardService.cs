@@ -55,6 +55,7 @@ public sealed class ClubDashboardService(FootballManagerDbContext dbContext) : I
 
         return new ClubDashboardDto(
             selectedClub.Name,
+            gameSave.Season.Name,
             selectedClub.TransferBudget,
             standings[selectedClub.Id],
             0,
