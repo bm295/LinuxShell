@@ -1,4 +1,4 @@
-import { CurrencyPipe, TitleCasePipe } from '@angular/common';
+import { TitleCasePipe } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
@@ -11,7 +11,7 @@ import { SquadPlayer } from '../../models/squad';
 @Component({
   selector: 'app-squad',
   standalone: true,
-  imports: [CurrencyPipe, RouterLink, TitleCasePipe],
+  imports: [RouterLink, TitleCasePipe],
   templateUrl: './squad.component.html',
   styleUrl: './squad.component.scss'
 })
@@ -26,6 +26,7 @@ export class SquadComponent implements OnInit {
   readonly isLoading = signal(true);
   readonly errorMessage = signal<string | null>(null);
   readonly starterCount = computed(() => this.players().filter((player) => player.isStarter).length);
+  readonly unavailableCount = computed(() => this.players().filter((player) => player.isInjured).length);
   readonly averageRating = computed(() => this.calculateAverage(this.players().map((player) => player.overallRating)));
   readonly dashboardLink = computed(() => {
     const gameId = this.gameId();

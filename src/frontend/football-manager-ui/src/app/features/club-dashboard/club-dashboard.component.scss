@@ -66,12 +66,16 @@ h3 {
 .stat-card {
   display: grid;
   gap: 0.35rem;
+  min-width: 0;
 }
 
 .stat-value {
-  font-size: clamp(2rem, 4vw, 3rem);
+  font-size: clamp(1.2rem, 2.3vw, 2rem);
   line-height: 1;
   font-weight: 700;
+  white-space: nowrap;
+  letter-spacing: -0.03em;
+  text-wrap: nowrap;
 }
 
 .dashboard-grid {

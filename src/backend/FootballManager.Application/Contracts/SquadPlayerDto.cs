@@ -4,6 +4,7 @@ public sealed record SquadPlayerDto(
     Guid Id,
     string Name,
     string Position,
+    int Age,
     int SquadNumber,
     int Attack,
     int Defense,
@@ -11,4 +12,7 @@ public sealed record SquadPlayerDto(
     int Fitness,
     int Morale,
     int OverallRating,
-    bool IsStarter);
+    bool IsCaptain,
+    bool IsStarter,
+    bool IsInjured,
+    int InjuryMatchesRemaining);

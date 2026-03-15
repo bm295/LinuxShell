@@ -30,6 +30,10 @@ public sealed class PlayerConfiguration : IEntityTypeConfiguration<Player>
             .HasMaxLength(30)
             .IsRequired();
 
+        builder.Property(player => player.Age)
+            .HasColumnName("age")
+            .IsRequired();
+
         builder.Property(player => player.SquadNumber)
             .HasColumnName("squad_number")
             .IsRequired();
@@ -52,6 +56,18 @@ public sealed class PlayerConfiguration : IEntityTypeConfiguration<Player>
 
         builder.Property(player => player.Morale)
             .HasColumnName("morale")
+            .IsRequired();
+
+        builder.Property(player => player.IsCaptain)
+            .HasColumnName("is_captain")
+            .IsRequired();
+
+        builder.Property(player => player.InjuryMatchesRemaining)
+            .HasColumnName("injury_matches_remaining")
+            .IsRequired();
+
+        builder.Property(player => player.AttributeProgress)
+            .HasColumnName("attribute_progress")
             .IsRequired();
 
         builder.Property(player => player.CreatedAt)

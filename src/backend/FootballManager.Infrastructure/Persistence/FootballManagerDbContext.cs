@@ -13,6 +13,8 @@ public sealed class FootballManagerDbContext(DbContextOptions<FootballManagerDbC
 
     public DbSet<Player> Players => Set<Player>();
 
+    public DbSet<AcademyPlayer> AcademyPlayers => Set<AcademyPlayer>();
+
     public DbSet<Formation> Formations => Set<Formation>();
 
     public DbSet<Lineup> Lineups => Set<Lineup>();
@@ -22,6 +24,10 @@ public sealed class FootballManagerDbContext(DbContextOptions<FootballManagerDbC
     public DbSet<Fixture> Fixtures => Set<Fixture>();
 
     public DbSet<GameSave> GameSaves => Set<GameSave>();
+
+    public DbSet<Transfer> Transfers => Set<Transfer>();
+
+    public DbSet<FinanceEntry> FinanceEntries => Set<FinanceEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

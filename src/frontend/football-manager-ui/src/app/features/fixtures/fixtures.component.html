@@ -1,0 +1,90 @@
+<section class="fixtures-shell">
+  @if (isLoading()) {
+    <div class="panel fixtures-panel">
+      <p class="feedback">Loading fixtures...</p>
+    </div>
+  } @else if (errorMessage()) {
+    <div class="panel fixtures-panel">
+      <p class="feedback feedback-error">{{ errorMessage() }}</p>
+    </div>
+  } @else {
+    @if (dashboard(); as data) {
+      <section class="panel fixtures-hero">
+        <div>
+          <p class="label">Fixtures</p>
+          <h1>{{ data.seasonName }}</h1>
+          <p class="supporting-copy">Track what is done, what is coming, and where the season story turns next.</p>
+        </div>
+
+        <div class="hero-actions">
+          <a [routerLink]="matchCenterLink()" class="ghost-link">Match Center</a>
+          <a [routerLink]="leagueTableLink()" class="ghost-link">League Table</a>
+        </div>
+      </section>
+
+      <section class="summary-grid">
+        <article class="panel summary-card">
+          <span class="summary-label">Played</span>
+          <strong>{{ playedCount() }}</strong>
+          <span>Fixtures already settled</span>
+        </article>
+        <article class="panel summary-card">
+          <span class="summary-label">Remaining</span>
+          <strong>{{ remainingCount() }}</strong>
+          <span>Still left in the schedule</span>
+        </article>
+        <article class="panel summary-card">
+          <span class="summary-label">Current Round</span>
+          <strong>{{ currentRound() ?? '-' }}</strong>
+          <span>{{ data.clubName }} now sit {{ data.leaguePosition }}th</span>
+        </article>
+      </section>
+
+      <section class="round-list">
+        @for (group of roundGroups(); track group.roundNumber) {
+          <article class="panel round-panel">
+            <div class="round-head">
+              <div>
+                <p class="label">Round {{ group.roundNumber }}</p>
+                <h2>
+                  @if (group.isCurrentRound) {
+                    Current matchweek
+                  } @else {
+                    Fixture board
+                  }
+                </h2>
+              </div>
+            </div>
+
+            <div class="fixture-list">
+              @for (fixture of group.fixtures; track fixture.id) {
+                <article
+                  class="fixture-row"
+                  [class.fixture-row-managed]="fixture.isManagedClubFixture"
+                  [class.fixture-row-current]="fixture.isCurrentRound">
+                  <div class="fixture-teams">
+                    <strong>{{ fixture.homeClub }}</strong>
+                    <span>vs</span>
+                    <strong>{{ fixture.awayClub }}</strong>
+                  </div>
+
+                  @if (fixture.isPlayed) {
+                    <div class="fixture-meta">
+                      <strong>{{ fixture.homeGoals }}-{{ fixture.awayGoals }}</strong>
+                      <span>{{ fixture.playedAt | date: 'EEE, d MMM' }}</span>
+                    </div>
+                  } @else {
+                    <div class="fixture-meta">
+                      <strong>{{ fixture.scheduledAt | date: 'EEE, d MMM' }}</strong>
+                      <span>{{ fixture.isCurrentRound ? 'Live round' : 'Upcoming' }}</span>
+                    </div>
+                  }
+                </article>
+              }
+            </div>
+          </article>
+        }
+      </section>
+    }
+  }
+</section>

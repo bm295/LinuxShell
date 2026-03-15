@@ -46,4 +46,24 @@ public sealed class Season
         Fixtures.Add(fixture);
         return fixture;
     }
+
+    public void RefreshCurrentRound()
+    {
+        var nextRound = Fixtures
+            .Where(fixture => !fixture.IsPlayed)
+            .OrderBy(fixture => fixture.RoundNumber)
+            .Select(fixture => fixture.RoundNumber)
+            .FirstOrDefault();
+
+        if (nextRound > 0)
+        {
+            CurrentRound = nextRound;
+            return;
+        }
+
+        if (Fixtures.Count > 0)
+        {
+            CurrentRound = Fixtures.Max(fixture => fixture.RoundNumber);
+        }
+    }
 }

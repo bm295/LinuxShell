@@ -15,11 +15,22 @@ Formation
 
 Player fields must include:
 
+Age  
+Jersey number  
+Captain status  
 Attack  
 Defense  
 Passing  
 Fitness  
 Morale
+
+Each senior squad must always have exactly 1 captain.
+
+After each match, player technical stats should adjust gradually based on age:
+
+- younger players trend upward over time
+- peak-age players stay relatively stable
+- older players begin to decline over time
 
 ---
 
@@ -53,6 +64,8 @@ Features:
 - view player details
 - select starting lineup
 - save lineup
+- see player age and jersey number as part of the squad identity
+- see which player is the squad captain
 
 ---
 

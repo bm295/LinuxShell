@@ -45,6 +45,10 @@ public sealed class FixtureConfiguration : IEntityTypeConfiguration<Fixture>
         builder.Property(fixture => fixture.AwayGoals)
             .HasColumnName("away_goals");
 
+        builder.Property(fixture => fixture.PlayedAt)
+            .HasColumnName("played_at")
+            .HasColumnType("timestamp with time zone");
+
         builder.Property(fixture => fixture.CreatedAt)
             .HasColumnName("created_at")
             .HasColumnType("timestamp with time zone")

@@ -1,0 +1,102 @@
+<section class="table-shell">
+  @if (isLoading()) {
+    <div class="panel table-panel">
+      <p class="feedback">Loading the league table...</p>
+    </div>
+  } @else if (errorMessage()) {
+    <div class="panel table-panel">
+      <p class="feedback feedback-error">{{ errorMessage() }}</p>
+    </div>
+  } @else {
+    @if (dashboard(); as data) {
+      <section class="panel table-hero">
+        <div>
+          <p class="label">League Table</p>
+          <h1>{{ data.competitionName }}</h1>
+          <p class="supporting-copy">Every result now reshapes the season. Track the gaps, the pressure, and the clubs around you.</p>
+        </div>
+
+        <div class="hero-actions">
+          <a [routerLink]="matchCenterLink()" class="ghost-link">Match Center</a>
+          <a [routerLink]="fixturesLink()" class="ghost-link">Fixtures</a>
+        </div>
+      </section>
+
+      @if (currentClubRow(); as clubRow) {
+        <section class="summary-grid">
+          <article class="panel summary-card">
+            <span class="summary-label">Position</span>
+            <strong>{{ clubRow.position }}</strong>
+            <span>{{ clubRow.clubName }}</span>
+          </article>
+          <article class="panel summary-card">
+            <span class="summary-label">Points</span>
+            <strong>{{ clubRow.points }}</strong>
+            <span>{{ clubRow.played }} matches played</span>
+          </article>
+          <article class="panel summary-card">
+            <span class="summary-label">Goal Difference</span>
+            <strong>{{ clubRow.goalDifference }}</strong>
+            <span>{{ clubRow.goalsFor }} scored | {{ clubRow.goalsAgainst }} conceded</span>
+          </article>
+        </section>
+      }
+
+      <section class="table-grid">
+        <article class="panel pressure-panel">
+          <p class="label">Pressure Around You</p>
+          <h2>The clubs in reach</h2>
+
+          <div class="pressure-list">
+            @for (entry of pressureRows(); track entry.clubId) {
+              <article [class.pressure-entry-active]="entry.clubName === data.clubName">
+                <span class="position-pill">{{ entry.position }}</span>
+                <div>
+                  <strong>{{ entry.clubName }}</strong>
+                  <span>{{ entry.points }} pts | GD {{ entry.goalDifference }}</span>
+                </div>
+              </article>
+            }
+          </div>
+        </article>
+
+        <article class="panel standings-panel">
+          <div class="standings-head">
+            <p class="label">Standings</p>
+            <h2>Full table</h2>
+          </div>
+
+          <div class="standings-table">
+            <div class="standings-row standings-row-head">
+              <span>Pos</span>
+              <span>Club</span>
+              <span>P</span>
+              <span>W</span>
+              <span>D</span>
+              <span>L</span>
+              <span>GF</span>
+              <span>GA</span>
+              <span>GD</span>
+              <span>Pts</span>
+            </div>
+
+            @for (entry of table(); track entry.clubId) {
+              <div class="standings-row" [class.standings-row-active]="entry.clubName === data.clubName">
+                <span>{{ entry.position }}</span>
+                <strong>{{ entry.clubName }}</strong>
+                <span>{{ entry.played }}</span>
+                <span>{{ entry.wins }}</span>
+                <span>{{ entry.draws }}</span>
+                <span>{{ entry.losses }}</span>
+                <span>{{ entry.goalsFor }}</span>
+                <span>{{ entry.goalsAgainst }}</span>
+                <span>{{ entry.goalDifference }}</span>
+                <strong>{{ entry.points }}</strong>
+              </div>
+            }
+          </div>
+        </article>
+      </section>
+    }
+  }
+</section>

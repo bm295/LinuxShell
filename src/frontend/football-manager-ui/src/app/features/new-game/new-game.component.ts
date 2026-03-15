@@ -36,7 +36,8 @@ export class NewGameComponent implements OnInit {
     this.api.getAvailableClubs().subscribe({
       next: (clubs) => {
         this.clubs.set(clubs);
-        this.selectedClubId.set(clubs[0]?.id ?? null);
+        const defaultClub = clubs.find((club) => club.name === 'Arsenal') ?? clubs[0] ?? null;
+        this.selectedClubId.set(defaultClub?.id ?? null);
         this.isLoading.set(false);
       },
       error: () => {

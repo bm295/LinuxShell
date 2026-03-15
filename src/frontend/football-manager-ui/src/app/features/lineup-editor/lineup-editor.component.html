@@ -19,6 +19,7 @@
         </div>
 
         <div class="hero-actions">
+          <a [routerLink]="matchCenterLink()" class="ghost-link">Match Center</a>
           <a [routerLink]="dashboardLink()" class="ghost-link">Club Dashboard</a>
           <a [routerLink]="squadLink()" class="ghost-link">Squad Board</a>
         </div>
@@ -84,6 +85,8 @@
                   class="player-pick"
                   [class.player-pick-selected]="isSelected(player.id)"
                   [class.player-pick-locked]="isLocked(player)"
+                  [class.player-pick-unavailable]="player.isInjured"
+                  [disabled]="player.isInjured"
                   (click)="togglePlayer(player)">
                   <div class="pick-topline">
                     <span class="shirt-number">#{{ player.squadNumber }}</span>
@@ -91,7 +94,13 @@
                   </div>
                   <div class="pick-copy">
                     <span>{{ player.name }}</span>
-                    <small>FIT {{ player.fitness }} | MOR {{ player.morale }}</small>
+                    <small>
+                      @if (player.isInjured) {
+                        OUT {{ player.injuryMatchesRemaining }} | FIT {{ player.fitness }}
+                      } @else {
+                        FIT {{ player.fitness }} | MOR {{ player.morale }}
+                      }
+                    </small>
                   </div>
                 </button>
               }

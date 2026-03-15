@@ -22,6 +22,82 @@ namespace FootballManager.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("FootballManager.Domain.Entities.AcademyPlayer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Age")
+                        .HasColumnType("integer")
+                        .HasColumnName("age");
+
+                    b.Property<int>("Attack")
+                        .HasColumnType("integer")
+                        .HasColumnName("attack");
+
+                    b.Property<Guid>("ClubId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("club_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int>("Defense")
+                        .HasColumnType("integer")
+                        .HasColumnName("defense");
+
+                    b.Property<int>("DevelopmentProgress")
+                        .HasColumnType("integer")
+                        .HasColumnName("development_progress");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("first_name");
+
+                    b.Property<int>("Fitness")
+                        .HasColumnType("integer")
+                        .HasColumnName("fitness");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("last_name");
+
+                    b.Property<int>("Morale")
+                        .HasColumnType("integer")
+                        .HasColumnName("morale");
+
+                    b.Property<int>("Passing")
+                        .HasColumnType("integer")
+                        .HasColumnName("passing");
+
+                    b.Property<string>("Position")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("position");
+
+                    b.Property<int>("Potential")
+                        .HasColumnType("integer")
+                        .HasColumnName("potential");
+
+                    b.Property<string>("TrainingFocus")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("training_focus");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClubId", "LastName", "FirstName");
+
+                    b.ToTable("academy_players", (string)null);
+                });
+
             modelBuilder.Entity("FootballManager.Domain.Entities.Club", b =>
                 {
                     b.Property<Guid>("Id")
@@ -54,6 +130,42 @@ namespace FootballManager.Infrastructure.Persistence.Migrations
                     b.ToTable("clubs", (string)null);
                 });
 
+            modelBuilder.Entity("FootballManager.Domain.Entities.FinanceEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<Guid>("ClubId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("club_id");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(240)
+                        .HasColumnType("character varying(240)")
+                        .HasColumnName("description");
+
+                    b.Property<DateTime>("OccurredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("entry_type");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClubId", "OccurredAt");
+
+                    b.ToTable("finance_entries", (string)null);
+                });
+
             modelBuilder.Entity("FootballManager.Domain.Entities.Fixture", b =>
                 {
                     b.Property<Guid>("Id")
@@ -82,6 +194,10 @@ namespace FootballManager.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsPlayed")
                         .HasColumnType("boolean")
                         .HasColumnName("is_played");
+
+                    b.Property<DateTime?>("PlayedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("played_at");
 
                     b.Property<int>("RoundNumber")
                         .HasColumnType("integer")
@@ -165,6 +281,16 @@ namespace FootballManager.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<DateTime>("LastSavedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_saved_at");
+
+                    b.Property<string>("SaveName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("save_name");
+
                     b.Property<Guid>("SeasonId")
                         .HasColumnType("uuid")
                         .HasColumnName("season_id");
@@ -174,6 +300,8 @@ namespace FootballManager.Infrastructure.Persistence.Migrations
                         .HasColumnName("selected_club_id");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("LastSavedAt");
 
                     b.HasIndex("SeasonId")
                         .IsUnique();
@@ -248,9 +376,17 @@ namespace FootballManager.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
+                    b.Property<int>("Age")
+                        .HasColumnType("integer")
+                        .HasColumnName("age");
+
                     b.Property<int>("Attack")
                         .HasColumnType("integer")
                         .HasColumnName("attack");
+
+                    b.Property<int>("AttributeProgress")
+                        .HasColumnType("integer")
+                        .HasColumnName("attribute_progress");
 
                     b.Property<Guid>("ClubId")
                         .HasColumnType("uuid")
@@ -273,6 +409,14 @@ namespace FootballManager.Infrastructure.Persistence.Migrations
                     b.Property<int>("Fitness")
                         .HasColumnType("integer")
                         .HasColumnName("fitness");
+
+                    b.Property<int>("InjuryMatchesRemaining")
+                        .HasColumnType("integer")
+                        .HasColumnName("injury_matches_remaining");
+
+                    b.Property<bool>("IsCaptain")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_captain");
 
                     b.Property<string>("LastName")
                         .IsRequired()
@@ -341,6 +485,54 @@ namespace FootballManager.Infrastructure.Persistence.Migrations
                     b.ToTable("seasons", (string)null);
                 });
 
+            modelBuilder.Entity("FootballManager.Domain.Entities.Transfer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CompletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("completed_at");
+
+                    b.Property<decimal>("Fee")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("fee");
+
+                    b.Property<Guid>("FromClubId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("from_club_id");
+
+                    b.Property<Guid>("PlayerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("player_id");
+
+                    b.Property<Guid>("ToClubId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("to_club_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FromClubId");
+
+                    b.HasIndex("PlayerId");
+
+                    b.HasIndex("ToClubId");
+
+                    b.ToTable("transfers", (string)null);
+                });
+
+            modelBuilder.Entity("FootballManager.Domain.Entities.AcademyPlayer", b =>
+                {
+                    b.HasOne("FootballManager.Domain.Entities.Club", "Club")
+                        .WithMany("AcademyPlayers")
+                        .HasForeignKey("ClubId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Club");
+                });
+
             modelBuilder.Entity("FootballManager.Domain.Entities.Club", b =>
                 {
                     b.HasOne("FootballManager.Domain.Entities.League", "League")
@@ -350,6 +542,17 @@ namespace FootballManager.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("League");
+                });
+
+            modelBuilder.Entity("FootballManager.Domain.Entities.FinanceEntry", b =>
+                {
+                    b.HasOne("FootballManager.Domain.Entities.Club", "Club")
+                        .WithMany()
+                        .HasForeignKey("ClubId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Club");
                 });
 
             modelBuilder.Entity("FootballManager.Domain.Entities.Fixture", b =>
@@ -439,8 +642,37 @@ namespace FootballManager.Infrastructure.Persistence.Migrations
                     b.Navigation("League");
                 });
 
+            modelBuilder.Entity("FootballManager.Domain.Entities.Transfer", b =>
+                {
+                    b.HasOne("FootballManager.Domain.Entities.Club", "FromClub")
+                        .WithMany()
+                        .HasForeignKey("FromClubId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FootballManager.Domain.Entities.Player", "Player")
+                        .WithMany()
+                        .HasForeignKey("PlayerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FootballManager.Domain.Entities.Club", "ToClub")
+                        .WithMany()
+                        .HasForeignKey("ToClubId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("FromClub");
+
+                    b.Navigation("Player");
+
+                    b.Navigation("ToClub");
+                });
+
             modelBuilder.Entity("FootballManager.Domain.Entities.Club", b =>
                 {
+                    b.Navigation("AcademyPlayers");
+
                     b.Navigation("Players");
                 });
 

@@ -1,0 +1,174 @@
+<section class="market-shell">
+  @if (isLoading()) {
+    <div class="panel market-panel">
+      <p class="feedback">Loading the transfer market...</p>
+    </div>
+  } @else if (errorMessage() && !market()) {
+    <div class="panel market-panel">
+      <p class="feedback feedback-error">{{ errorMessage() }}</p>
+    </div>
+  } @else {
+    @if (dashboard(); as data) {
+      @if (market(); as marketData) {
+        <section class="panel market-hero">
+          <div>
+            <p class="label">Transfer Market</p>
+            <h1>{{ data.clubName }}</h1>
+            <p class="supporting-copy">Targets, departures, and budget pressure all sit in the same room now. Move quickly if you want to change the squad before the next match.</p>
+          </div>
+
+          <div class="hero-actions">
+            <a [routerLink]="matchCenterLink()" class="ghost-link">Match Center</a>
+            <a [routerLink]="squadLink()" class="ghost-link">Squad Board</a>
+          </div>
+        </section>
+
+        <section class="summary-grid">
+          <article class="panel summary-card">
+            <span class="summary-label">Budget</span>
+            <strong>{{ marketData.availableBudget | currency }}</strong>
+            <span>Ready for deals</span>
+          </article>
+          <article class="panel summary-card">
+            <span class="summary-label">Affordable Targets</span>
+            <strong>{{ affordableTargetCount() }}</strong>
+            <span>Within reach right now</span>
+          </article>
+          <article class="panel summary-card">
+            <span class="summary-label">Recent Deals</span>
+            <strong>{{ marketData.recentActivity.length }}</strong>
+            <span>Latest arrivals and departures</span>
+          </article>
+        </section>
+
+        @if (actionMessage()) {
+          <div class="panel banner-panel">
+            <p>{{ actionMessage() }}</p>
+          </div>
+        }
+
+        @if (errorMessage()) {
+          <div class="panel banner-panel">
+            <p class="feedback-error">{{ errorMessage() }}</p>
+          </div>
+        }
+
+        <section class="market-grid">
+          <article class="panel spotlight-panel">
+            <p class="label">Market Spotlight</p>
+            @if (featuredTarget(); as target) {
+              <h2>{{ target.name }}</h2>
+              <p class="supporting-copy">{{ target.clubName }} are carrying him into the market at {{ target.fee | currency }}.</p>
+              <div class="detail-grid">
+                <article>
+                  <span class="summary-label">Role</span>
+                  <strong>{{ target.position }}</strong>
+                </article>
+                <article>
+                  <span class="summary-label">Overall</span>
+                  <strong>{{ target.overallRating }}</strong>
+                </article>
+                <article>
+                  <span class="summary-label">Fitness</span>
+                  <strong>{{ target.fitness }}</strong>
+                </article>
+                <article>
+                  <span class="summary-label">Morale</span>
+                  <strong>{{ target.morale }}</strong>
+                </article>
+              </div>
+            } @else {
+              <h2>No target on the board</h2>
+              <p class="supporting-copy">The market is quiet right now.</p>
+            }
+          </article>
+
+          <article class="panel activity-panel">
+            <div class="panel-head">
+              <div>
+                <p class="label">Recent Activity</p>
+                <h2>Latest business</h2>
+              </div>
+            </div>
+
+            @if (marketData.recentActivity.length) {
+              <div class="activity-list">
+                @for (activity of marketData.recentActivity; track activity.transferId) {
+                  <article>
+                    <strong>{{ activity.isIncoming ? 'Arrival' : 'Departure' }}: {{ activity.playerName }}</strong>
+                    <span>{{ activity.fromClub }} -> {{ activity.toClub }}</span>
+                    <span>{{ activity.fee | currency }} | {{ activity.completedAt | date: 'EEE, d MMM' }}</span>
+                  </article>
+                }
+              </div>
+            } @else {
+              <p class="supporting-copy">No deals have gone through for this club yet.</p>
+            }
+          </article>
+        </section>
+
+        <section class="market-grid">
+          <article class="panel list-panel">
+            <div class="panel-head">
+              <div>
+                <p class="label">Targets</p>
+                <h2>Available players</h2>
+              </div>
+            </div>
+
+            <div class="deal-list">
+              @for (target of marketData.targets; track target.playerId) {
+                <article class="deal-row">
+                  <div class="deal-copy">
+                    <strong>{{ target.name }}</strong>
+                    <span>{{ target.clubName }} | {{ target.position }} | OVR {{ target.overallRating }}</span>
+                  </div>
+                  <div class="deal-actions">
+                    <span class="deal-fee">{{ target.fee | currency }}</span>
+                    <button
+                      type="button"
+                      class="deal-button"
+                      [disabled]="!target.isAffordable || actionPlayerId() === target.playerId"
+                      (click)="buyPlayer(target.playerId)">
+                      {{ actionPlayerId() === target.playerId ? 'Working...' : (target.isAffordable ? 'Buy' : 'Too Expensive') }}
+                    </button>
+                  </div>
+                </article>
+              }
+            </div>
+          </article>
+
+          <article class="panel list-panel">
+            <div class="panel-head">
+              <div>
+                <p class="label">Sale List</p>
+                <h2>Possible departures</h2>
+              </div>
+            </div>
+
+            <div class="deal-list">
+              @for (sale of marketData.saleOpportunities; track sale.playerId) {
+                <article class="deal-row">
+                  <div class="deal-copy">
+                    <strong>{{ sale.name }}</strong>
+                    <span>{{ sale.position }} | OVR {{ sale.overallRating }} | {{ sale.suggestedBuyer }}</span>
+                  </div>
+                  <div class="deal-actions">
+                    <span class="deal-fee">{{ sale.fee | currency }}</span>
+                    <button
+                      type="button"
+                      class="deal-button"
+                      [disabled]="sale.suggestedBuyer === 'No buyer lined up' || actionPlayerId() === sale.playerId"
+                      (click)="sellPlayer(sale.playerId)">
+                      {{ actionPlayerId() === sale.playerId ? 'Working...' : (sale.suggestedBuyer === 'No buyer lined up' ? 'No Buyer' : 'Sell') }}
+                    </button>
+                  </div>
+                </article>
+              }
+            </div>
+          </article>
+        </section>
+      }
+    }
+  }
+</section>

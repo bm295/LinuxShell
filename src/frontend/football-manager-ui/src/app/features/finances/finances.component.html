@@ -1,0 +1,124 @@
+<section class="finance-shell">
+  @if (isLoading()) {
+    <div class="panel finance-panel">
+      <p class="feedback">Loading the finance office...</p>
+    </div>
+  } @else if (errorMessage() && !finance()) {
+    <div class="panel finance-panel">
+      <p class="feedback feedback-error">{{ errorMessage() }}</p>
+    </div>
+  } @else {
+    @if (dashboard(); as data) {
+      @if (finance(); as financeData) {
+        <section class="panel finance-hero">
+          <div>
+            <p class="label">Finances</p>
+            <h1>{{ data.clubName }}</h1>
+            <p class="supporting-copy">{{ financeData.trendSummary }}</p>
+          </div>
+
+          <div class="hero-actions">
+            <a [routerLink]="matchCenterLink()" class="ghost-link">Match Center</a>
+            <a [routerLink]="transferMarketLink()" class="ghost-link">Transfer Market</a>
+          </div>
+        </section>
+
+        <section class="summary-grid">
+          <article class="panel summary-card">
+            <span class="summary-label">Budget</span>
+            <strong>{{ financeData.currentBudget | currency }}</strong>
+            <span>Available to shape the squad</span>
+          </article>
+          <article class="panel summary-card">
+            <span class="summary-label">Wage Total</span>
+            <strong>{{ financeData.wageTotal | currency }}</strong>
+            <span>Current weekly squad cost</span>
+          </article>
+          <article class="panel summary-card">
+            <span class="summary-label">Transfer Spending</span>
+            <strong>{{ financeData.transferSpending | currency }}</strong>
+            <span>Committed to arrivals</span>
+          </article>
+          <article class="panel summary-card">
+            <span class="summary-label">Recent Income</span>
+            <strong>{{ financeData.recentIncome | currency }}</strong>
+            <span>{{ financeData.recentIncomeLabel }}</span>
+          </article>
+        </section>
+
+        <section class="finance-grid">
+          <article class="panel board-panel">
+            <div class="panel-head">
+              <div>
+                <p class="label">Board View</p>
+                <h2>{{ financeData.boardConfidence }}</h2>
+              </div>
+            </div>
+
+            <p class="supporting-copy">{{ financeData.boardConfidenceNote }}</p>
+
+            <div class="detail-grid">
+              <article>
+                <span class="summary-label">Total Income</span>
+                <strong>{{ financeData.totalIncome | currency }}</strong>
+              </article>
+              <article>
+                <span class="summary-label">Total Expenses</span>
+                <strong>{{ financeData.totalExpenses | currency }}</strong>
+              </article>
+              <article>
+                <span class="summary-label">Transfer Income</span>
+                <strong>{{ financeData.transferIncome | currency }}</strong>
+              </article>
+              <article>
+                <span class="summary-label">Match Income</span>
+                <strong>{{ financeData.matchIncome | currency }}</strong>
+              </article>
+            </div>
+          </article>
+
+          <article class="panel activity-panel">
+            <div class="panel-head">
+              <div>
+                <p class="label">Recent Activity</p>
+                <h2>Money in motion</h2>
+              </div>
+            </div>
+
+            @if (financeData.recentEvents.length) {
+              <div class="activity-list">
+                @for (event of financeData.recentEvents; track event.id) {
+                  <article>
+                    <strong>{{ event.type }}: {{ event.amount | currency }}</strong>
+                    <span>{{ event.description }}</span>
+                    <span>{{ event.occurredAt | date: 'EEE, d MMM' }} | {{ event.isIncome ? 'Income' : 'Expense' }}</span>
+                  </article>
+                }
+              </div>
+            } @else {
+              <p class="supporting-copy">No finance entries have landed yet. The next matchday or deal will move the books.</p>
+            }
+          </article>
+        </section>
+
+        @if (latestEvent(); as latest) {
+          <section class="panel spotlight-panel">
+            <p class="label">Latest Move</p>
+            <h2>{{ latest.type }}</h2>
+            <p class="supporting-copy">{{ latest.description }}</p>
+            <div class="detail-grid">
+              <article>
+                <span class="summary-label">Amount</span>
+                <strong>{{ latest.amount | currency }}</strong>
+              </article>
+              <article>
+                <span class="summary-label">Booked</span>
+                <strong>{{ latest.occurredAt | date: 'EEE, d MMM' }}</strong>
+              </article>
+            </div>
+          </section>
+        }
+      }
+    }
+  }
+</section>

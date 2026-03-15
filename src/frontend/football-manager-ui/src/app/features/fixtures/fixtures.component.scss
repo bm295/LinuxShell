@@ -1,0 +1,145 @@
+.fixtures-shell {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.fixtures-panel,
+.fixtures-hero,
+.summary-card,
+.round-panel {
+  padding: 1.6rem;
+}
+
+.fixtures-hero {
+  display: grid;
+  grid-template-columns: 1.35fr auto;
+  gap: 1.2rem;
+  align-items: end;
+  color: #fff;
+  background:
+    radial-gradient(circle at top right, rgba(247, 214, 151, 0.26), transparent 28%),
+    linear-gradient(145deg, rgba(25, 58, 50, 0.96), rgba(96, 43, 31, 0.92));
+}
+
+.fixtures-hero h1,
+.round-head h2 {
+  margin: 0;
+}
+
+.supporting-copy {
+  margin: 0;
+  color: rgba(255, 245, 230, 0.84);
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+}
+
+.ghost-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3rem;
+  padding: 0.85rem 1.2rem;
+  border-radius: 999px;
+  text-decoration: none;
+  color: #fff;
+  font-weight: 600;
+  border: 1px solid rgba(255, 245, 230, 0.26);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.summary-grid,
+.round-list,
+.fixture-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.summary-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.summary-card {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.summary-card strong {
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1;
+}
+
+.round-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.fixture-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 1rem;
+  background: rgba(255, 252, 247, 0.78);
+}
+
+.fixture-row-managed {
+  border: 1px solid rgba(159, 74, 45, 0.2);
+}
+
+.fixture-row-current {
+  background: rgba(255, 244, 229, 0.92);
+}
+
+.fixture-teams,
+.fixture-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.fixture-meta {
+  justify-content: flex-end;
+}
+
+.summary-label,
+.label,
+.fixture-meta span,
+.fixture-teams span {
+  color: var(--muted);
+}
+
+.label,
+.summary-label {
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.75rem;
+}
+
+.label {
+  margin: 0 0 0.45rem;
+  color: var(--accent-strong);
+}
+
+.feedback-error {
+  color: #8b341f;
+}
+
+@media (max-width: 900px) {
+  .fixtures-hero,
+  .summary-grid,
+  .fixture-row {
+    grid-template-columns: 1fr;
+  }
+
+  .fixture-row,
+  .fixture-teams,
+  .fixture-meta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

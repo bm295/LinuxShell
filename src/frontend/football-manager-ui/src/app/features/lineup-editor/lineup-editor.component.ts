@@ -39,6 +39,10 @@ export class LineupEditorComponent implements OnInit {
     const gameId = this.gameId();
     return gameId ? `/dashboard/${gameId}` : '/';
   });
+  readonly matchCenterLink = computed(() => {
+    const gameId = this.gameId();
+    return gameId ? `/match-center/${gameId}` : '/';
+  });
   readonly activeFormation = computed(() => {
     const data = this.editorData();
     const formationId = this.selectedFormationId();
@@ -133,6 +137,12 @@ export class LineupEditorComponent implements OnInit {
   }
 
   togglePlayer(player: SquadPlayer): void {
+    if (player.isInjured) {
+      this.feedbackMessage.set(`${player.name} is unavailable for ${player.injuryMatchesRemaining} more matchday(s).`);
+      this.feedbackTone.set('error');
+      return;
+    }
+
     if (this.isLocked(player)) {
       return;
     }
@@ -155,6 +165,10 @@ export class LineupEditorComponent implements OnInit {
   }
 
   isLocked(player: SquadPlayer): boolean {
+    if (player.isInjured) {
+      return true;
+    }
+
     const position = this.toPositionKey(player.position);
     return !this.isSelected(player.id) && this.selectionCounts()[position] >= this.requirements()[position];
   }
@@ -258,6 +272,7 @@ export class LineupEditorComponent implements OnInit {
 
   private readonly comparePlayers = (left: SquadPlayer, right: SquadPlayer): number =>
     Number(right.isStarter) - Number(left.isStarter) ||
+    Number(left.isInjured) - Number(right.isInjured) ||
     right.overallRating - left.overallRating ||
     right.fitness - left.fitness ||
     left.squadNumber - right.squadNumber;

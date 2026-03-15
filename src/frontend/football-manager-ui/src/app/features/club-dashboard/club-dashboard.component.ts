@@ -22,6 +22,7 @@ export class ClubDashboardComponent implements OnInit {
   readonly isLoading = signal(true);
   readonly errorMessage = signal<string | null>(null);
   readonly currentGameId = signal<string | null>(null);
+  readonly matchCenterLink = computed(() => this.currentGameId() ? `/match-center/${this.currentGameId()}` : '/');
   readonly squadLink = computed(() => this.currentGameId() ? `/squad/${this.currentGameId()}` : '/');
   readonly lineupLink = computed(() => this.currentGameId() ? `/lineup/${this.currentGameId()}` : '/');
 

@@ -41,9 +41,9 @@
           <span>{{ data.lineup.readiness }}</span>
         </article>
         <article class="panel summary-card">
-          <span class="summary-label">Transfer Budget</span>
-          <strong>{{ data.budget | currency }}</strong>
-          <span>Still available for future moves</span>
+          <span class="summary-label">Unavailable</span>
+          <strong>{{ unavailableCount() }}</strong>
+          <span>{{ unavailableCount() ? 'Need medical clearance' : 'Full board available' }}</span>
         </article>
       </section>
 
@@ -89,8 +89,16 @@
           @for (player of players(); track player.id) {
             <a class="player-card" [routerLink]="['/player', gameId(), player.id]">
               <div class="player-topline">
-                <span class="shirt-number">#{{ player.squadNumber }}</span>
-                @if (player.isStarter) {
+                <div class="player-meta">
+                  <span class="shirt-number">#{{ player.squadNumber }}</span>
+                  <span class="age-badge">Age {{ player.age }}</span>
+                  @if (player.isCaptain) {
+                    <span class="captain-badge">Captain</span>
+                  }
+                </div>
+                @if (player.isInjured) {
+                  <span class="injury-badge">Out {{ player.injuryMatchesRemaining }}</span>
+                } @else if (player.isStarter) {
                   <span class="starter-badge">Starting XI</span>
                 }
               </div>

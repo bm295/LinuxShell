@@ -1,0 +1,171 @@
+<section class="match-shell">
+  @if (isLoading()) {
+    <div class="panel match-panel">
+      <p class="feedback">Loading the match briefing...</p>
+    </div>
+  } @else if (errorMessage()) {
+    <div class="panel match-panel">
+      <p class="feedback feedback-error">{{ errorMessage() }}</p>
+    </div>
+  } @else {
+    @if (dashboard(); as data) {
+      <section class="panel match-hero">
+        <div>
+          <p class="label">Match Center</p>
+          <h1>{{ heroTitle() }}</h1>
+          <p class="supporting-copy">{{ heroCopy() }}</p>
+        </div>
+
+        <div class="hero-actions">
+          <a [routerLink]="lineupLink()" class="ghost-link">Edit Lineup</a>
+          <a [routerLink]="dashboardLink()" class="ghost-link">Club Dashboard</a>
+          <button
+            type="button"
+            class="primary-button"
+            [disabled]="!data.nextFixture || isSimulating()"
+            (click)="simulateMatch()">
+            {{ isSimulating() ? 'Simulating Match...' : (data.nextFixture ? 'Simulate Next Match' : 'No Match Ready') }}
+          </button>
+        </div>
+      </section>
+
+      <section class="overview-grid">
+        <article class="panel detail-card fixture-card">
+          <p class="label">Next Fixture</p>
+          @if (data.nextFixture) {
+            <h2>{{ opponentName() }}</h2>
+            <p class="supporting-copy">{{ venueLabel() }}. {{ data.competitionName }} round {{ data.nextFixture.roundNumber }}.</p>
+            <div class="detail-grid">
+              <article>
+                <span class="summary-label">Date</span>
+                <strong>{{ data.nextFixture.scheduledAt | date: 'EEE, d MMM' }}</strong>
+              </article>
+              <article>
+                <span class="summary-label">Kickoff Mood</span>
+                <strong>{{ data.lineup.readiness }}</strong>
+              </article>
+            </div>
+          } @else {
+            <h2>Schedule complete</h2>
+            <p class="supporting-copy">Every currently generated fixture has been played.</p>
+          }
+        </article>
+
+        <article class="panel detail-card">
+          <p class="label">Readiness</p>
+          <h2>{{ data.lineup.formationName }}</h2>
+          <p class="supporting-copy">The current XI will decide whether the buildup becomes momentum.</p>
+          <div class="detail-grid">
+            <article>
+              <span class="summary-label">Fitness</span>
+              <strong>{{ data.lineup.averageFitness }}</strong>
+            </article>
+            <article>
+              <span class="summary-label">Morale</span>
+              <strong>{{ data.lineup.averageMorale }}</strong>
+            </article>
+            <article>
+              <span class="summary-label">Starters</span>
+              <strong>{{ data.lineup.starterCount }}/{{ data.lineup.requiredStarters }}</strong>
+            </article>
+            <article>
+              <span class="summary-label">Unavailable</span>
+              <strong>{{ injuryCount() }}</strong>
+            </article>
+          </div>
+        </article>
+
+        <article class="panel detail-card">
+          <p class="label">Table Pulse</p>
+          <h2>{{ data.competitionName }}</h2>
+          <p class="supporting-copy">{{ data.momentumNote }}</p>
+          <div class="detail-grid">
+            <article>
+              <span class="summary-label">Position</span>
+              <strong>{{ data.leaguePosition }}</strong>
+            </article>
+            <article>
+              <span class="summary-label">Points</span>
+              <strong>{{ data.points }}</strong>
+            </article>
+          </div>
+        </article>
+      </section>
+
+      @if (actionMessage()) {
+        <div class="panel banner-panel">
+          <p>{{ actionMessage() }}</p>
+        </div>
+      }
+
+      @if (simulationResult(); as result) {
+        <section class="panel result-panel">
+          <div class="result-head">
+            <div>
+              <p class="label">Latest Result</p>
+              <h2>{{ result.homeTeam }} {{ result.score.homeGoals }}-{{ result.score.awayGoals }} {{ result.awayTeam }}</h2>
+            </div>
+            <a [routerLink]="homeLink()" class="inline-link">Return Home</a>
+          </div>
+
+          <p class="supporting-copy">{{ result.summary }}</p>
+
+          <div class="standing-grid">
+            <article>
+              <span class="summary-label">Position</span>
+              <strong>{{ result.clubStanding.position }}</strong>
+            </article>
+            <article>
+              <span class="summary-label">Played</span>
+              <strong>{{ result.clubStanding.played }}</strong>
+            </article>
+            <article>
+              <span class="summary-label">Points</span>
+              <strong>{{ result.clubStanding.points }}</strong>
+            </article>
+            <article>
+              <span class="summary-label">Goal Difference</span>
+              <strong>{{ result.clubStanding.goalDifference }}</strong>
+            </article>
+          </div>
+
+          @if (result.nextFixture) {
+            <p class="next-fixture-note">
+              Next up: {{ result.nextFixture.homeClub }} vs {{ result.nextFixture.awayClub }} on
+              {{ result.nextFixture.scheduledAt | date: 'EEE, d MMM' }}.
+            </p>
+          }
+        </section>
+
+        <section class="panel events-panel">
+          <div class="events-head">
+            <div>
+              <p class="label">Match Events</p>
+              <h2>How it unfolded</h2>
+            </div>
+          </div>
+
+          <div class="event-list">
+            @for (event of result.matchEvents; track event.minute + event.description) {
+              <article class="event-row">
+                <span class="event-minute">{{ event.minute }}'</span>
+                <div>
+                  <strong>{{ event.type }}</strong>
+                  <p>{{ event.description }}</p>
+                </div>
+              </article>
+            }
+          </div>
+        </section>
+      } @else if (data.recentResult) {
+        <section class="panel result-panel">
+          <p class="label">Recent Result</p>
+          <h2>{{ data.recentResult.homeClub }} {{ data.recentResult.homeGoals }}-{{ data.recentResult.awayGoals }} {{ data.recentResult.awayClub }}</h2>
+          <p class="supporting-copy">
+            Round {{ data.recentResult.roundNumber }} finished on {{ data.recentResult.playedAt | date: 'EEE, d MMM' }}.
+          </p>
+        </section>
+      }
+    }
+  }
+</section>

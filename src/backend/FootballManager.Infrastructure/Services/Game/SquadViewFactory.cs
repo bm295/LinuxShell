@@ -28,6 +28,7 @@ internal static class SquadViewFactory
             player.Id,
             player.FullName,
             player.Position.ToString(),
+            player.Age,
             player.SquadNumber,
             player.Attack,
             player.Defense,
@@ -35,7 +36,10 @@ internal static class SquadViewFactory
             player.Fitness,
             player.Morale,
             player.GetOverallRating(),
-            starterIds.Contains(player.Id));
+            player.IsCaptain,
+            starterIds.Contains(player.Id),
+            player.IsInjured,
+            player.InjuryMatchesRemaining);
 
     public static LineupDto BuildLineup(Lineup lineup, IReadOnlyCollection<Player> squadPlayers)
     {
@@ -67,7 +71,9 @@ internal static class SquadViewFactory
             .First();
 
         var isStarter = starterIds.Contains(featuredPlayer.Id);
-        var spotlight = isStarter
+        var spotlight = featuredPlayer.IsInjured
+            ? $"{featuredPlayer.FullName} is in recovery and the selection board has shifted around him."
+            : isStarter
             ? $"{featuredPlayer.FullName} is carrying the tempo into the next matchday."
             : $"{featuredPlayer.FullName} is turning training into a selection headache.";
 
@@ -80,13 +86,17 @@ internal static class SquadViewFactory
             featuredPlayer.Fitness,
             featuredPlayer.Morale,
             isStarter,
+            featuredPlayer.IsInjured,
+            featuredPlayer.InjuryMatchesRemaining,
             spotlight);
     }
 
     public static PlayerDetailDto BuildPlayerDetail(Player player, IReadOnlySet<Guid> starterIds)
     {
         var isStarter = starterIds.Contains(player.Id);
-        var roleStatus = isStarter
+        var roleStatus = player.IsInjured
+            ? $"Unavailable for the next {player.InjuryMatchesRemaining} matchday(s)"
+            : isStarter
             ? "Locked into the current XI"
             : player.GetReadinessScore() >= 80
                 ? "Closing hard on the starting places"
@@ -96,6 +106,7 @@ internal static class SquadViewFactory
             player.Id,
             player.FullName,
             player.Position.ToString(),
+            player.Age,
             player.SquadNumber,
             player.Attack,
             player.Defense,
@@ -103,7 +114,10 @@ internal static class SquadViewFactory
             player.Fitness,
             player.Morale,
             player.GetOverallRating(),
+            player.IsCaptain,
             isStarter,
+            player.IsInjured,
+            player.InjuryMatchesRemaining,
             roleStatus,
             BuildManagerNote(player));
     }
@@ -142,6 +156,11 @@ internal static class SquadViewFactory
             "Defense" => "He gives the back line its edge when the game turns rough.",
             _ => "He keeps the side stitched together when possession starts to wobble."
         };
+
+        if (player.IsInjured)
+        {
+            return $"{traitNote} The medical room expects him back in {player.InjuryMatchesRemaining} matchday(s).";
+        }
 
         if (player.Fitness < 70)
         {

@@ -13,7 +13,8 @@ public sealed class GameSetupService(FootballManagerDbContext dbContext) : IGame
         return await dbContext.Clubs
             .AsNoTracking()
             .Where(club => club.League != null && club.League.IsTemplate)
-            .OrderBy(club => club.Name)
+            .OrderBy(club => club.Name == "Arsenal" ? 0 : 1)
+            .ThenBy(club => club.Name)
             .Select(club => new ClubOptionDto(club.Id, club.Name, club.TransferBudget))
             .ToListAsync(cancellationToken);
     }
@@ -25,6 +26,8 @@ public sealed class GameSetupService(FootballManagerDbContext dbContext) : IGame
         var templateLeague = await dbContext.Leagues
             .Include(league => league.Clubs)
                 .ThenInclude(club => club.Players)
+            .Include(league => league.Clubs)
+                .ThenInclude(club => club.AcademyPlayers)
             .AsSplitQuery()
             .SingleOrDefaultAsync(league => league.IsTemplate, cancellationToken);
 
@@ -45,24 +48,56 @@ public sealed class GameSetupService(FootballManagerDbContext dbContext) : IGame
         {
             var clonedClub = gameLeague.AddClub(templateClub.Name, templateClub.TransferBudget);
             clonedClubs[templateClub.Id] = clonedClub;
+            Player? clonedCaptain = null;
 
             foreach (var templatePlayer in templateClub.Players.OrderBy(player => player.SquadNumber))
             {
-                clonedClub.AddPlayer(
+                var clonedPlayer = clonedClub.AddPlayer(
                     templatePlayer.FirstName,
                     templatePlayer.LastName,
                     templatePlayer.Position,
+                    templatePlayer.Age,
                     templatePlayer.SquadNumber,
                     templatePlayer.Attack,
                     templatePlayer.Defense,
                     templatePlayer.Passing,
                     templatePlayer.Fitness,
                     templatePlayer.Morale);
+
+                if (templatePlayer.IsCaptain)
+                {
+                    clonedCaptain = clonedPlayer;
+                }
+            }
+
+            if (clonedCaptain is not null)
+            {
+                clonedClub.SetCaptain(clonedCaptain);
+            }
+            else
+            {
+                clonedClub.EnsureCaptain();
+            }
+
+            foreach (var academyPlayer in templateClub.AcademyPlayers.OrderByDescending(player => player.Potential))
+            {
+                clonedClub.AddAcademyPlayer(
+                    academyPlayer.FirstName,
+                    academyPlayer.LastName,
+                    academyPlayer.Position,
+                    academyPlayer.Age,
+                    academyPlayer.Attack,
+                    academyPlayer.Defense,
+                    academyPlayer.Passing,
+                    academyPlayer.Fitness,
+                    academyPlayer.Morale,
+                    academyPlayer.Potential,
+                    academyPlayer.DevelopmentProgress,
+                    academyPlayer.TrainingFocus);
             }
         }
 
-        var gameNumber = await dbContext.GameSaves.CountAsync(cancellationToken) + 1;
-        var season = gameLeague.StartSeason($"Season {gameNumber}");
+        var season = gameLeague.StartSeason("Season 1");
         RoundRobinFixtureGenerator.BuildSeasonFixtures(
             season,
             gameLeague.Clubs.OrderBy(club => club.Name).ToList());

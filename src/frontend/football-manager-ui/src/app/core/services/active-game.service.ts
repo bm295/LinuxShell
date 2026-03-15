@@ -2,6 +2,7 @@ import { Injectable, signal } from '@angular/core';
 
 import { ClubDashboard } from '../../models/club-dashboard';
 import { CreateNewGameResponse } from '../../models/create-new-game-response';
+import { GameSaveSummary } from '../../models/game-save';
 
 const storageKey = 'football-manager.active-game';
 
@@ -10,6 +11,7 @@ export interface ActiveGameState {
   selectedClub: string;
   seasonId: string | null;
   seasonName: string | null;
+  saveName: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -21,7 +23,18 @@ export class ActiveGameService {
       gameId: response.gameId,
       selectedClub: response.selectedClub,
       seasonId: response.seasonId,
-      seasonName: response.seasonName
+      seasonName: response.seasonName,
+      saveName: null
+    });
+  }
+
+  setFromSave(summary: GameSaveSummary): void {
+    this.persistState({
+      gameId: summary.gameId,
+      selectedClub: summary.clubName,
+      seasonId: null,
+      seasonName: summary.seasonName,
+      saveName: summary.saveName
     });
   }
 
@@ -32,7 +45,8 @@ export class ActiveGameService {
       gameId,
       selectedClub: dashboard.clubName,
       seasonId: current?.gameId === gameId ? current.seasonId : null,
-      seasonName: dashboard.seasonName
+      seasonName: dashboard.seasonName,
+      saveName: current?.gameId === gameId ? current.saveName : null
     });
   }
 
@@ -80,7 +94,8 @@ export class ActiveGameService {
         gameId: parsed.gameId,
         selectedClub: parsed.selectedClub,
         seasonId: parsed.seasonId ?? null,
-        seasonName: parsed.seasonName ?? null
+        seasonName: parsed.seasonName ?? null,
+        saveName: parsed.saveName ?? null
       };
     } catch {
       localStorage.removeItem(storageKey);
@@ -92,6 +107,7 @@ export class ActiveGameService {
     return left?.gameId === right?.gameId &&
       left?.selectedClub === right?.selectedClub &&
       left?.seasonId === right?.seasonId &&
-      left?.seasonName === right?.seasonName;
+      left?.seasonName === right?.seasonName &&
+      left?.saveName === right?.saveName;
   }
 }

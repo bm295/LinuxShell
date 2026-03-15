@@ -10,6 +10,7 @@ Scripts/
 bin/
 obj/
 .config/
+src/backend/FootballManager.Infrastructure/Persistence/Migrations/
 
 # Node / Angular
 node_modules/

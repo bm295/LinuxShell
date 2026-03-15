@@ -19,9 +19,15 @@ public static class DependencyInjection
 
         services.AddDbContext<FootballManagerDbContext>(options => options.UseNpgsql(connectionString));
         services.AddScoped<IBootstrapSummaryService, BootstrapSummaryService>();
+        services.AddScoped<IAcademyService, AcademyService>();
         services.AddScoped<IGameSetupService, GameSetupService>();
+        services.AddScoped<IGameSaveService, GameSaveService>();
         services.AddScoped<IClubDashboardService, ClubDashboardService>();
+        services.AddScoped<IFinanceService, FinanceService>();
+        services.AddScoped<ILeagueOverviewService, LeagueOverviewService>();
+        services.AddScoped<IMatchSimulationService, MatchSimulationService>();
         services.AddScoped<ISquadManagementService, SquadManagementService>();
+        services.AddScoped<ITransferMarketService, TransferMarketService>();
         services.AddScoped<DatabaseInitializer>();
 
         return services;

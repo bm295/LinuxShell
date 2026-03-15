@@ -13,7 +13,7 @@
   } @else if (errorMessage()) {
     <p class="feedback feedback-error">{{ errorMessage() }}</p>
   } @else {
-    <p class="feedback">Pick one of the fictional clubs below. Starting a new game creates a new season, copies the seeded squads, generates fixtures, and redirects to the dashboard.</p>
+    <p class="feedback">Pick one of the clubs below. Starting a new game creates a new season, copies the seeded squads, generates fixtures, and redirects to the dashboard.</p>
 
     <div class="club-grid">
       @for (club of clubs(); track club.id) {

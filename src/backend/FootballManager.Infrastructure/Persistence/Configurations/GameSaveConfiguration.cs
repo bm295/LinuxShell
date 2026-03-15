@@ -27,8 +27,20 @@ public sealed class GameSaveConfiguration : IEntityTypeConfiguration<GameSave>
             .HasColumnType("timestamp with time zone")
             .IsRequired();
 
+        builder.Property(gameSave => gameSave.SaveName)
+            .HasColumnName("save_name")
+            .HasMaxLength(120)
+            .IsRequired();
+
+        builder.Property(gameSave => gameSave.LastSavedAt)
+            .HasColumnName("last_saved_at")
+            .HasColumnType("timestamp with time zone")
+            .IsRequired();
+
         builder.HasIndex(gameSave => gameSave.SeasonId)
             .IsUnique();
+
+        builder.HasIndex(gameSave => gameSave.LastSavedAt);
 
         builder.HasOne(gameSave => gameSave.SelectedClub)
             .WithMany()

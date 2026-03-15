@@ -1,0 +1,154 @@
+<section class="academy-shell">
+  @if (isLoading()) {
+    <div class="panel academy-panel">
+      <p class="feedback">Loading the academy board...</p>
+    </div>
+  } @else if (errorMessage() && !academy()) {
+    <div class="panel academy-panel">
+      <p class="feedback feedback-error">{{ errorMessage() }}</p>
+    </div>
+  } @else {
+    @if (dashboard(); as data) {
+      @if (academy(); as academyData) {
+        <section class="panel academy-hero">
+          <div>
+            <p class="label">Academy</p>
+            <h1>{{ data.clubName }}</h1>
+            <p class="supporting-copy">{{ academyData.summaryNote }}</p>
+          </div>
+
+          <div class="hero-actions">
+            <a [routerLink]="matchCenterLink()" class="ghost-link">Match Center</a>
+            <a [routerLink]="squadLink()" class="ghost-link">Senior Squad</a>
+          </div>
+        </section>
+
+        @if (actionMessage()) {
+          <div class="panel banner-panel">
+            <p>{{ actionMessage() }}</p>
+          </div>
+        }
+
+        @if (errorMessage()) {
+          <div class="panel banner-panel banner-panel-error">
+            <p>{{ errorMessage() }}</p>
+          </div>
+        }
+
+        <section class="summary-grid">
+          <article class="panel summary-card">
+            <span class="summary-label">Academy Depth</span>
+            <strong>{{ academyData.academyDepth }}</strong>
+            <span>Young players currently in the pipeline</span>
+          </article>
+          <article class="panel summary-card">
+            <span class="summary-label">Promotion Ready</span>
+            <strong>{{ academyData.promotionReadyCount }}</strong>
+            <span>Prospects close enough to make the jump</span>
+          </article>
+          <article class="panel summary-card">
+            <span class="summary-label">Average Potential</span>
+            <strong>{{ academyData.averagePotential }}</strong>
+            <span>Upside across the current intake</span>
+          </article>
+          <article class="panel summary-card">
+            <span class="summary-label">Average Readiness</span>
+            <strong>{{ academyData.averageReadiness }}</strong>
+            <span>How close the group is to senior football</span>
+          </article>
+        </section>
+
+        <section class="academy-grid">
+          <article class="panel spotlight-panel">
+            <div class="panel-head">
+              <div>
+                <p class="label">Top Prospect</p>
+                <h2>{{ topProspect()?.name ?? 'Waiting on the next breakthrough' }}</h2>
+              </div>
+            </div>
+
+            @if (topProspect(); as player) {
+              <p class="supporting-copy">{{ academyData.promotionPressure }}</p>
+
+              <div class="detail-grid">
+                <article>
+                  <span class="summary-label">Position</span>
+                  <strong>{{ player.position }}</strong>
+                </article>
+                <article>
+                  <span class="summary-label">Age</span>
+                  <strong>{{ player.age }}</strong>
+                </article>
+                <article>
+                  <span class="summary-label">Overall</span>
+                  <strong>{{ player.overallRating }}</strong>
+                </article>
+                <article>
+                  <span class="summary-label">Potential</span>
+                  <strong>{{ player.potential }}</strong>
+                </article>
+                <article>
+                  <span class="summary-label">Training Status</span>
+                  <strong>{{ player.trainingStatus }}</strong>
+                </article>
+                <article>
+                  <span class="summary-label">Readiness</span>
+                  <strong>{{ player.promotionReadiness }}</strong>
+                </article>
+              </div>
+
+              <button
+                type="button"
+                class="primary-action"
+                [disabled]="isPromoting(player.playerId)"
+                (click)="promotePlayer(player.playerId)">
+                {{ isPromoting(player.playerId) ? 'Promoting...' : 'Promote to Squad' }}
+              </button>
+            } @else {
+              <p class="supporting-copy">The academy intake is empty right now.</p>
+            }
+          </article>
+
+          <article class="panel list-panel">
+            <div class="panel-head">
+              <div>
+                <p class="label">Academy Group</p>
+                <h2>Future first-team stories</h2>
+              </div>
+            </div>
+
+            @if (academyData.players.length) {
+              <div class="academy-list">
+                @for (player of academyData.players; track player.playerId) {
+                  <article>
+                    <div class="player-copy">
+                      <strong>{{ player.name }}</strong>
+                      <span>{{ player.position }} | Age {{ player.age }} | Potential {{ player.potential }}</span>
+                      <span>{{ player.trainingFocus }} | {{ player.trainingStatus }}</span>
+                      <span>{{ player.promotionNote }}</span>
+                    </div>
+
+                    <div class="player-stats">
+                      <span>OVR {{ player.overallRating }}</span>
+                      <span>Readiness {{ player.promotionReadiness }}</span>
+                      <span>Development {{ player.developmentProgress }}</span>
+                      <button
+                        type="button"
+                        class="inline-action"
+                        [disabled]="isPromoting(player.playerId)"
+                        (click)="promotePlayer(player.playerId)">
+                        {{ isPromoting(player.playerId) ? 'Promoting...' : 'Promote' }}
+                      </button>
+                    </div>
+                  </article>
+                }
+              </div>
+            } @else {
+              <p class="supporting-copy">No academy players are in the current intake.</p>
+            }
+          </article>
+        </section>
+      }
+    }
+  }
+</section>

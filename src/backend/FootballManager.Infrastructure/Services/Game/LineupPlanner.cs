@@ -21,6 +21,17 @@ internal static class LineupPlanner
 
         if (gameSave.Lineup?.Formation is not null)
         {
+            var updatedStarters = SelectPreferredStarters(
+                gameSave.SelectedClub,
+                gameSave.Lineup.Formation,
+                gameSave.Lineup.GetStarterPlayerIds());
+
+            if (!gameSave.Lineup.GetStarterPlayerIds().ToHashSet().SetEquals(updatedStarters.Select(player => player.Id)))
+            {
+                gameSave.SetLineup(gameSave.Lineup.Formation, updatedStarters.Select(player => player.Id));
+                await dbContext.SaveChangesAsync(cancellationToken);
+            }
+
             return gameSave.Lineup;
         }
 
@@ -42,15 +53,24 @@ internal static class LineupPlanner
     }
 
     public static IReadOnlyCollection<Player> SelectDefaultStarters(Club club, Formation formation)
+        => SelectPreferredStarters(club, formation, []);
+
+    public static IReadOnlyCollection<Player> SelectPreferredStarters(
+        Club club,
+        Formation formation,
+        IEnumerable<Guid> preferredStarterIds)
     {
         ArgumentNullException.ThrowIfNull(club);
         ArgumentNullException.ThrowIfNull(formation);
+        ArgumentNullException.ThrowIfNull(preferredStarterIds);
 
         var starters = new List<Player>();
-        starters.AddRange(PickPlayers(club, PlayerPosition.Goalkeeper, formation.Goalkeepers));
-        starters.AddRange(PickPlayers(club, PlayerPosition.Defender, formation.Defenders));
-        starters.AddRange(PickPlayers(club, PlayerPosition.Midfielder, formation.Midfielders));
-        starters.AddRange(PickPlayers(club, PlayerPosition.Forward, formation.Forwards));
+        var preferredIds = preferredStarterIds.Distinct().ToHashSet();
+
+        starters.AddRange(PickPlayers(club, PlayerPosition.Goalkeeper, formation.Goalkeepers, preferredIds));
+        starters.AddRange(PickPlayers(club, PlayerPosition.Defender, formation.Defenders, preferredIds));
+        starters.AddRange(PickPlayers(club, PlayerPosition.Midfielder, formation.Midfielders, preferredIds));
+        starters.AddRange(PickPlayers(club, PlayerPosition.Forward, formation.Forwards, preferredIds));
         return starters;
     }
 
@@ -86,6 +106,11 @@ internal static class LineupPlanner
             .Select(starterId => playersById[starterId])
             .ToList();
 
+        if (starters.Any(player => !player.IsAvailableForSelection()))
+        {
+            throw new InvalidOperationException("Lineup cannot include players who are unavailable for selection.");
+        }
+
         ValidatePositionCount(starters, PlayerPosition.Goalkeeper, formation.Goalkeepers, formation.Name);
         ValidatePositionCount(starters, PlayerPosition.Defender, formation.Defenders, formation.Name);
         ValidatePositionCount(starters, PlayerPosition.Midfielder, formation.Midfielders, formation.Name);
@@ -94,18 +119,23 @@ internal static class LineupPlanner
         return starters;
     }
 
-    private static IReadOnlyCollection<Player> PickPlayers(Club club, PlayerPosition position, int requiredCount)
+    private static IReadOnlyCollection<Player> PickPlayers(
+        Club club,
+        PlayerPosition position,
+        int requiredCount,
+        IReadOnlySet<Guid> preferredIds)
     {
         var players = club.Players
-            .Where(player => player.Position == position)
-            .OrderByDescending(player => GetStarterScore(player))
+            .Where(player => player.Position == position && player.IsAvailableForSelection())
+            .OrderByDescending(player => (preferredIds.Contains(player.Id) ? 100 : 0) + GetStarterScore(player))
             .ThenBy(player => player.SquadNumber)
             .Take(requiredCount)
             .ToList();
 
         if (players.Count != requiredCount)
         {
-            throw new InvalidOperationException($"The squad does not have enough {position.ToString().ToLowerInvariant()}s to fill the lineup.");
+            throw new InvalidOperationException(
+                $"The squad does not have enough available {position.ToString().ToLowerInvariant()}s to fill the lineup.");
         }
 
         return players;

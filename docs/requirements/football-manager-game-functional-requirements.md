@@ -5,7 +5,7 @@
 
 The system is a browser-based football club management game.
 
-The user acts as the manager of a fictional football club and is responsible for managing squad selection, tactics, transfers, finances, and match decisions during a league season.
+The user acts as the manager of a fictional football club and is responsible for managing squad selection, tactics, transfers, finances, academy development, and match decisions during a league season.
 
 The game is turn-based and focused on decision-making and simulation rather than real-time gameplay.
 
@@ -53,6 +53,7 @@ The top menu must support the following navigation model:
 - Load Game
 - Club Dashboard
 - Squad
+- Academy
 - Match Center
 - League Table
 - Fixtures
@@ -72,7 +73,9 @@ The home page interaction flow must support:
 3. Continue flow:
    - when an active save exists, the home page must show a `Continue` action that returns the player to the latest in-progress view or club dashboard
 4. Load flow:
-   - selecting `Load Game` opens the available saves
+   - selecting `Load Game` opens a recent saves pop-up or modal on the home page
+   - the pop-up must list available saves with save name, club, season, and last updated time
+   - each save entry in the pop-up must support `Load` and `Delete`
    - after a save is loaded, the home page refreshes to show the selected save summary
 5. In-game navigation:
    - each summary card or quick action on the home page must deep-link to the relevant game area
@@ -86,6 +89,7 @@ When a save exists, the home page should summarize:
 - next fixture
 - budget
 - squad status
+- academy status
 - latest important actions or results
 
 ---
@@ -94,13 +98,14 @@ When a save exists, the home page should summarize:
 
 The gameplay loop must follow these steps:
 
-1. Player reviews squad and team status
+1. Player reviews squad, academy, and team status
 2. Player sets lineup and tactics
-3. Player simulates the next match
-4. System updates match results and league standings
-5. System updates player conditions (fitness, morale, injuries)
-6. Player continues to next match
-7. Season continues until all fixtures are completed
+3. Player reviews transfers, finances, and promotion options
+4. Player simulates the next match
+5. System updates match results and league standings
+6. System updates player conditions, academy training progress, and club finances
+7. Player continues to next match
+8. Season continues until all fixtures are completed
 
 ---
 
@@ -116,6 +121,7 @@ When starting a new game, the system must initialize:
 
 - League teams
 - Club squads
+- Club academy prospects
 - Club finances
 - Fixture list for the season
 - League standings
@@ -135,6 +141,7 @@ The club dashboard must display:
 - Recent match results
 - Squad overview
 - Team overall rating
+- Academy prospect summary
 
 ---
 
@@ -148,10 +155,16 @@ The user must be able to:
 - Assign substitute players
 - Rest players
 
+Promoted academy players must join the senior squad and become available through the same squad management flow as other players.
+
+Each senior squad must always have exactly one captain.
+
 Each player must include:
 
 - Name
 - Age
+- Jersey number
+- Captain status
 - Position
 - Overall rating
 - Attack attribute
@@ -202,6 +215,7 @@ Simulation must consider:
 - Team strength
 - Player fitness
 - Player morale
+- Player age profile
 - Tactical setup
 - Randomness
 
@@ -210,8 +224,10 @@ After simulation, the system must update:
 - League standings
 - Player fitness
 - Player morale
+- Player core attributes based on age progression or decline
 - Injury status
 - Club finances
+- Academy training progress
 
 ---
 
@@ -292,6 +308,13 @@ The game must allow:
 
 - Saving current progress
 - Loading saved games
+- Deleting saved games
+
+Save / load interaction rules:
+
+- `Load Game` on the home page should open recent saves as a pop-up rather than a permanently visible panel
+- loading and deleting saves should happen from that pop-up flow
+- saving from the home page must show a clear success or failure message to the player
 
 Game state must include:
 
@@ -300,3 +323,27 @@ Game state must include:
 - League standings
 - Club finances
 - Player conditions
+- Academy players and development progress
+
+---
+
+# 15. Academy Module
+
+The game must include an academy module for youth development.
+
+The academy module must allow the player to:
+
+- View academy players who are not yet part of the senior squad
+- Review each academy player's age, position, current rating, potential, and training status
+- Track academy development over time as matchdays or rounds pass
+- Promote academy players into the senior squad
+
+Academy rules:
+
+- Each club should have a small academy group or youth intake available during a save
+- Academy players should improve gradually through training and development updates
+- Promotion should move the player from the academy into the senior squad
+- Promoted players should receive a squad number and become selectable in squad and lineup screens
+- Promotion may be limited by squad size, club rules, or available registration space if those systems exist
+
+The system should display academy information on both the dedicated academy page and the home page.

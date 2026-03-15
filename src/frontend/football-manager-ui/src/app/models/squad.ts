@@ -2,6 +2,7 @@ export interface SquadPlayer {
   id: string;
   name: string;
   position: string;
+  age: number;
   squadNumber: number;
   attack: number;
   defense: number;
@@ -9,7 +10,10 @@ export interface SquadPlayer {
   fitness: number;
   morale: number;
   overallRating: number;
+  isCaptain: boolean;
   isStarter: boolean;
+  isInjured: boolean;
+  injuryMatchesRemaining: number;
 }
 
 export interface SquadSummary {

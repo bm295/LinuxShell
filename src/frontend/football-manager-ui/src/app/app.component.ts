@@ -21,8 +21,15 @@ export class AppComponent {
     const activeGame = this.activeGameService.activeGame();
 
     if (activeGame) {
+      items.push({ label: 'Match Center', path: `/match-center/${activeGame.gameId}` });
+      items.push({ label: 'Academy', path: `/academy/${activeGame.gameId}` });
+      items.push({ label: 'League Table', path: `/league-table/${activeGame.gameId}` });
+      items.push({ label: 'Fixtures', path: `/fixtures/${activeGame.gameId}` });
+      items.push({ label: 'Transfer Market', path: `/transfer-market/${activeGame.gameId}` });
+      items.push({ label: 'Finances', path: `/finances/${activeGame.gameId}` });
       items.push({ label: 'Club Dashboard', path: `/dashboard/${activeGame.gameId}` });
       items.push({ label: 'Squad', path: `/squad/${activeGame.gameId}` });
+      items.push({ label: 'Lineup', path: `/lineup/${activeGame.gameId}` });
     }
 
     return items;

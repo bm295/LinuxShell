@@ -59,5 +59,30 @@ public sealed class Fixture
 
     public int? AwayGoals { get; private set; }
 
+    public DateTime? PlayedAt { get; private set; }
+
     public DateTime CreatedAt { get; private set; }
+
+    public void Complete(int homeGoals, int awayGoals, DateTime playedAt)
+    {
+        if (IsPlayed)
+        {
+            throw new InvalidOperationException("This fixture has already been played.");
+        }
+
+        if (homeGoals < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(homeGoals), "Goals cannot be negative.");
+        }
+
+        if (awayGoals < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(awayGoals), "Goals cannot be negative.");
+        }
+
+        HomeGoals = homeGoals;
+        AwayGoals = awayGoals;
+        PlayedAt = playedAt;
+        IsPlayed = true;
+    }
 }

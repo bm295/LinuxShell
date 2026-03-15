@@ -13,7 +13,7 @@
         <div>
           <p class="label">{{ clubName() }}</p>
           <h1>#{{ data.squadNumber }} {{ data.name }}</h1>
-          <p class="supporting-copy">{{ data.position | titlecase }} | {{ data.roleStatus }}</p>
+          <p class="supporting-copy">{{ data.position | titlecase }} | Age {{ data.age }}{{ data.isCaptain ? ' | Captain' : '' }} | {{ data.roleStatus }}</p>
           <p class="manager-note">{{ data.managerNote }}</p>
         </div>
 
@@ -24,7 +24,7 @@
           </article>
           <article>
             <span class="summary-label">Selection</span>
-            <strong>{{ data.isStarter ? 'Starting XI' : 'Squad Depth' }}</strong>
+            <strong>{{ data.isInjured ? ('Out ' + data.injuryMatchesRemaining) : (data.isStarter ? 'Starting XI' : 'Squad Depth') }}</strong>
           </article>
         </div>
       </section>

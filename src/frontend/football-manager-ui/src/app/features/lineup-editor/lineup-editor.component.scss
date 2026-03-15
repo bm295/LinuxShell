@@ -147,6 +147,12 @@
   opacity: 0.58;
 }
 
+.player-pick-unavailable {
+  border-style: dashed;
+  background: rgba(233, 221, 214, 0.82);
+  cursor: not-allowed;
+}
+
 .pick-topline,
 .pick-copy {
   display: flex;

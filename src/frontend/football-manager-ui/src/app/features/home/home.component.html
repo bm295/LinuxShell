@@ -6,44 +6,425 @@
 
     <div class="cta-row">
       @if (activeGame()) {
-        <a [routerLink]="squadLink()" class="primary-link">Open Squad</a>
+        <a [routerLink]="matchCenterLink()" class="primary-link">Play Next Match</a>
+        <button
+          type="button"
+          class="ghost-action"
+          [disabled]="isSavingGame() || loadingSaveId() !== null || deletingSaveId() !== null"
+          (click)="saveCurrentGame()">
+          {{ isSavingGame() ? 'Saving...' : 'Save Game' }}
+        </button>
+        <button
+          type="button"
+          class="ghost-action"
+          [disabled]="isSavingGame() || loadingSaveId() !== null || deletingSaveId() !== null"
+          (click)="openLoadFlow()">
+          Load Game
+        </button>
+        <a [routerLink]="academyLink()" class="ghost-link">Academy</a>
+        <a [routerLink]="transferMarketLink()" class="ghost-link">Open Market</a>
         <a [routerLink]="lineupLink()" class="ghost-link">Edit Lineup</a>
-        <a [routerLink]="dashboardLink()" class="ghost-link">Club Dashboard</a>
+        <a [routerLink]="squadLink()" class="ghost-link">Open Squad</a>
       } @else {
         <a routerLink="/new-game" class="primary-link">Start New Game</a>
+        @if (recentSaves().length) {
+          <button
+            type="button"
+            class="ghost-action"
+            [disabled]="loadingSaveId() !== null || deletingSaveId() !== null"
+            (click)="openLoadFlow()">
+            Load Game
+          </button>
+        }
       }
     </div>
+
+    @if (saveActionMessage()) {
+      <div class="action-banner action-banner-success">{{ saveActionMessage() }}</div>
+    }
+
+    @if (saveMessage()) {
+      <div class="action-banner action-banner-error">{{ saveMessage() }}</div>
+    }
+  </article>
+
+  <article class="panel continue-card">
+    <div class="card-head">
+      <div>
+        <p class="label">Career Spotlight</p>
+        <h2>{{ spotlightSave() ? spotlightSave()!.saveName : 'Start a new career' }}</h2>
+      </div>
+      @if (continueLink(); as link) {
+        <a [routerLink]="link" class="inline-link">Continue</a>
+      }
+    </div>
+
+    @if (saveState() === 'loading' && !spotlightSave()) {
+      <p class="notes-copy">Pulling the latest journeys back into view.</p>
+    } @else {
+      @if (spotlightSave(); as save) {
+        <p class="notes-copy">{{ careerSpotlightCopy() }}</p>
+
+        <div class="summary-grid">
+          <article>
+            <span class="summary-label">Club</span>
+            <strong>{{ save.clubName }}</strong>
+          </article>
+          <article>
+            <span class="summary-label">Season</span>
+            <strong>{{ save.seasonName }}</strong>
+          </article>
+          <article>
+            <span class="summary-label">Last Saved</span>
+            <strong>{{ save.lastSavedAt | date: 'EEE, d MMM' }}</strong>
+          </article>
+        </div>
+
+        <div class="cta-row">
+          @if (continueLink(); as link) {
+            <a [routerLink]="link" class="primary-link">Continue Career</a>
+          }
+        </div>
+      } @else {
+        <p class="notes-copy">No saved journeys are on the board yet. Start a new career and the archive will begin to fill.</p>
+      }
+    }
   </article>
 
   @if (activeGame()) {
-    <article class="panel squad-card">
+    <article class="panel fixture-card">
       <div class="card-head">
         <div>
-          <p class="label">Squad Status</p>
-          <h2>{{ activeDashboard()?.clubName ?? activeGame()?.selectedClub }}</h2>
+          <p class="label">Next Fixture</p>
+          <h2>{{ nextOpponent() }}</h2>
         </div>
-        <a [routerLink]="squadLink()" class="inline-link">Open squad</a>
+        <a [routerLink]="matchCenterLink()" class="inline-link">Open Match Center</a>
       </div>
 
       @if (summaryState() === 'error') {
         <p class="notes-copy notes-error">{{ summaryMessage() }}</p>
+      } @else if (summaryState() === 'loading') {
+        <p class="notes-copy">The fixture board is coming into focus.</p>
       } @else {
-        <p class="notes-copy">
-          The dressing room picture is shifting. Keep the balance between quality, readiness, and selection pressure.
-        </p>
+        <p class="notes-copy">{{ nextFixtureNarrative() }}</p>
 
         <div class="summary-grid">
           <article>
-            <span class="summary-label">Squad Size</span>
-            <strong>{{ activeDashboard()?.squadSummary?.totalPlayers ?? 0 }}</strong>
+            <span class="summary-label">Competition</span>
+            <strong>{{ activeDashboard()?.competitionName ?? 'League play' }}</strong>
           </article>
           <article>
-            <span class="summary-label">Average Rating</span>
+            <span class="summary-label">Venue</span>
+            <strong>{{ nextVenue() }}</strong>
+          </article>
+          <article>
+            <span class="summary-label">Readiness</span>
+            <strong>{{ activeDashboard()?.lineup?.readiness ?? 'Briefing incoming' }}</strong>
+          </article>
+          <article>
+            <span class="summary-label">Round</span>
+            <strong>{{ activeDashboard()?.nextFixture?.roundNumber ?? '-' }}</strong>
+          </article>
+          <article>
+            <span class="summary-label">Date</span>
+            <strong>{{ activeDashboard()?.nextFixture?.scheduledAt ? (activeDashboard()?.nextFixture?.scheduledAt | date: 'EEE, d MMM') : 'TBA' }}</strong>
+          </article>
+          <article>
+            <span class="summary-label">Formation</span>
+            <strong>{{ activeDashboard()?.lineup?.formationName ?? 'Unassigned' }}</strong>
+          </article>
+        </div>
+      }
+    </article>
+
+    <article class="panel result-card">
+      <div class="card-head">
+        <div>
+          <p class="label">Recent Result</p>
+          <h2>{{ recentResultLabel() }}</h2>
+        </div>
+        <a [routerLink]="dashboardLink()" class="inline-link">Club Dashboard</a>
+      </div>
+
+      @if (summaryState() === 'loading') {
+        <p class="notes-copy">The last scoreline is being pinned back to the wall.</p>
+      } @else if (summaryState() === 'error') {
+        <p class="notes-copy notes-error">{{ summaryMessage() }}</p>
+      } @else {
+        <p class="notes-copy">{{ recentResultTone() }}</p>
+
+        <div class="summary-grid">
+          <article>
+            <span class="summary-label">League Position</span>
+            <strong>{{ activeDashboard()?.leaguePosition ?? '-' }}</strong>
+          </article>
+          <article>
+            <span class="summary-label">Points</span>
+            <strong>{{ activeDashboard()?.points ?? 0 }}</strong>
+          </article>
+          <article>
+            <span class="summary-label">Last Played</span>
+            <strong>{{ activeDashboard()?.recentResult?.playedAt ? (activeDashboard()?.recentResult?.playedAt | date: 'EEE, d MMM') : 'Not yet' }}</strong>
+          </article>
+        </div>
+      }
+    </article>
+
+    <article class="panel momentum-card">
+      <div class="card-head">
+        <div>
+          <p class="label">Momentum</p>
+          <h2>{{ momentumHeading() }}</h2>
+        </div>
+        <a [routerLink]="lineupLink()" class="inline-link">Fine-tune the XI</a>
+      </div>
+
+      @if (summaryState() === 'loading') {
+        <p class="notes-copy">The staff are reading the mood of the room.</p>
+      } @else if (summaryState() === 'error') {
+        <p class="notes-copy notes-error">{{ summaryMessage() }}</p>
+      } @else {
+        <p class="notes-copy">{{ activeDashboard()?.momentumNote }}</p>
+
+        <div class="featured-grid">
+          <article>
+            <span class="summary-label">Lineup Fitness</span>
+            <strong>{{ activeDashboard()?.lineup?.averageFitness ?? 0 }}</strong>
+          </article>
+          <article>
+            <span class="summary-label">Lineup Morale</span>
+            <strong>{{ activeDashboard()?.lineup?.averageMorale ?? 0 }}</strong>
+          </article>
+          <article>
+            <span class="summary-label">Squad Rating</span>
             <strong>{{ activeDashboard()?.squadSummary?.averageRating ?? 0 }}</strong>
           </article>
+        </div>
+      }
+    </article>
+
+    <article class="panel league-card">
+      <div class="card-head">
+        <div>
+          <p class="label">League Story</p>
+          <h2>{{ activeDashboard()?.competitionName ?? 'League play' }}</h2>
+        </div>
+        <div class="league-quick-links">
+          <a [routerLink]="leagueTableLink()" class="inline-link">League Table</a>
+          <a [routerLink]="fixturesLink()" class="inline-link">Fixtures</a>
+        </div>
+      </div>
+
+      @if (summaryState() === 'loading') {
+        <p class="notes-copy">The wider competition picture is settling into focus.</p>
+      } @else if (summaryState() === 'error') {
+        <p class="notes-copy notes-error">{{ summaryMessage() }}</p>
+      } @else {
+        <p class="notes-copy">{{ rivalryCopy() }}</p>
+
+        <div class="league-table-mini">
+          @for (entry of nearbyTableRows(); track entry.clubId) {
+            <article [class.league-row-active]="entry.clubName === activeDashboard()?.clubName">
+              <span class="position-pill">{{ entry.position }}</span>
+              <div>
+                <strong>{{ entry.clubName }}</strong>
+                <span>{{ entry.points }} pts | GD {{ entry.goalDifference }}</span>
+              </div>
+            </article>
+          }
+        </div>
+
+        <div class="summary-grid">
           <article>
-            <span class="summary-label">Lineup Readiness</span>
-            <strong>{{ activeDashboard()?.lineup?.readiness ?? 'Briefing incoming' }}</strong>
+            <span class="summary-label">Played</span>
+            <strong>{{ seasonProgress().played }}</strong>
+          </article>
+          <article>
+            <span class="summary-label">Remaining</span>
+            <strong>{{ seasonProgress().remaining }}</strong>
+          </article>
+          <article>
+            <span class="summary-label">Current Round</span>
+            <strong>{{ seasonProgress().currentRound ?? '-' }}</strong>
+          </article>
+          <article>
+            <span class="summary-label">Rounds</span>
+            <strong>{{ seasonProgress().totalRounds }}</strong>
+          </article>
+        </div>
+      }
+    </article>
+
+    <article class="panel transfer-card">
+      <div class="card-head">
+        <div>
+          <p class="label">Transfer Pulse</p>
+          <h2>Market movement</h2>
+        </div>
+        <a [routerLink]="transferMarketLink()" class="inline-link">Transfer Market</a>
+      </div>
+
+      @if (summaryState() === 'loading') {
+        <p class="notes-copy">Scouts and agents are pushing the next wave of names toward the board.</p>
+      } @else if (summaryState() === 'error') {
+        <p class="notes-copy notes-error">{{ summaryMessage() }}</p>
+      } @else {
+        <p class="notes-copy">{{ marketSummary() }}</p>
+
+        <div class="summary-grid">
+          <article>
+            <span class="summary-label">Budget</span>
+            <strong>{{ transferMarket()?.availableBudget ?? 0 | currency }}</strong>
+          </article>
+          <article>
+            <span class="summary-label">Affordable Targets</span>
+            <strong>{{ affordableTargetCount() }}</strong>
+          </article>
+          <article>
+            <span class="summary-label">Recent Deals</span>
+            <strong>{{ transferMarket()?.recentActivity?.length ?? 0 }}</strong>
+          </article>
+        </div>
+
+        <div class="transfer-insight-grid">
+          <article>
+            <span class="summary-label">Spotlight</span>
+            @if (marketSpotlightTarget(); as target) {
+              <strong>{{ target.name }}</strong>
+              <span>{{ target.clubName }} | {{ target.position }} | {{ target.fee | currency }}</span>
+            } @else {
+              @if (marketSpotlightSale(); as sale) {
+                <strong>{{ sale.name }}</strong>
+                <span>{{ sale.suggestedBuyer }} | {{ sale.position }} | {{ sale.fee | currency }}</span>
+              } @else {
+                <strong>No live lead</strong>
+                <span>The market board is waiting on the next opening.</span>
+              }
+            }
+          </article>
+
+          <article>
+            <span class="summary-label">Activity</span>
+            @if (latestTransferActivity(); as activity) {
+              <strong>{{ activity.isIncoming ? 'Arrival' : 'Departure' }}</strong>
+              <span>{{ activity.playerName }} | {{ activity.fee | currency }}</span>
+            } @else {
+              <strong>No deals yet</strong>
+              <span>The first move is still there to make.</span>
+            }
+          </article>
+        </div>
+      }
+    </article>
+
+    <article class="panel academy-card">
+      <div class="card-head">
+        <div>
+          <p class="label">Academy Watch</p>
+          <h2>{{ academy()?.clubName ?? activeDashboard()?.clubName ?? 'Youth pathway' }}</h2>
+        </div>
+        <a [routerLink]="academyLink()" class="inline-link">Academy</a>
+      </div>
+
+      @if (summaryState() === 'loading') {
+        <p class="notes-copy">The youth coaches are feeding through the latest development reports.</p>
+      } @else if (summaryState() === 'error') {
+        <p class="notes-copy notes-error">{{ summaryMessage() }}</p>
+      } @else {
+        <p class="notes-copy">{{ academySummaryCopy() }}</p>
+
+        <div class="summary-grid">
+          <article>
+            <span class="summary-label">Depth</span>
+            <strong>{{ academy()?.academyDepth ?? 0 }}</strong>
+          </article>
+          <article>
+            <span class="summary-label">Ready Now</span>
+            <strong>{{ academy()?.promotionReadyCount ?? 0 }}</strong>
+          </article>
+          <article>
+            <span class="summary-label">Avg Potential</span>
+            <strong>{{ academy()?.averagePotential ?? 0 }}</strong>
+          </article>
+        </div>
+
+        <div class="academy-insight-grid">
+          <article>
+            <span class="summary-label">Top Prospect</span>
+            @if (academySpotlight(); as player) {
+              <strong>{{ player.name }}</strong>
+              <span>{{ player.position }} | Age {{ player.age }} | Potential {{ player.potential }}</span>
+            } @else {
+              <strong>Academy intake pending</strong>
+              <span>The next group of prospects has not arrived yet.</span>
+            }
+          </article>
+
+          <article>
+            <span class="summary-label">Training Track</span>
+            @if (academySpotlight(); as player) {
+              <strong>{{ player.trainingStatus }}</strong>
+              <span>{{ player.trainingFocus }} | Readiness {{ player.promotionReadiness }}</span>
+            } @else {
+              <strong>No live training story</strong>
+              <span>Long-term development is waiting on the next intake.</span>
+            }
+          </article>
+        </div>
+      }
+    </article>
+
+    <article class="panel finance-card">
+      <div class="card-head">
+        <div>
+          <p class="label">Boardroom Pressure</p>
+          <h2>Financial stakes</h2>
+        </div>
+        <a [routerLink]="financesLink()" class="inline-link">Finances</a>
+      </div>
+
+      @if (summaryState() === 'loading') {
+        <p class="notes-copy">The finance office are updating the latest budget picture.</p>
+      } @else if (summaryState() === 'error') {
+        <p class="notes-copy notes-error">{{ summaryMessage() }}</p>
+      } @else {
+        <p class="notes-copy">{{ financeSummary()?.trendSummary }}</p>
+
+        <div class="finance-summary-grid">
+          <article>
+            <span class="summary-label">Budget</span>
+            <strong>{{ financeSummary()?.currentBudget ?? 0 | currency }}</strong>
+          </article>
+          <article>
+            <span class="summary-label">Wage Total</span>
+            <strong>{{ financeSummary()?.wageTotal ?? 0 | currency }}</strong>
+          </article>
+          <article>
+            <span class="summary-label">Transfer Spending</span>
+            <strong>{{ financeSummary()?.transferSpending ?? 0 | currency }}</strong>
+          </article>
+          <article>
+            <span class="summary-label">Recent Income</span>
+            <strong>{{ financeSummary()?.recentIncome ?? 0 | currency }}</strong>
+          </article>
+        </div>
+
+        <div class="finance-insight-grid">
+          <article>
+            <span class="summary-label">Board Confidence</span>
+            <strong>{{ financeSummary()?.boardConfidence ?? 'Awaiting review' }}</strong>
+            <span>{{ financeSummary()?.boardConfidenceNote ?? 'The board note will settle once the first finance swing lands.' }}</span>
+          </article>
+
+          <article>
+            <span class="summary-label">Latest Movement</span>
+            @if (latestFinanceEvent(); as financeEvent) {
+              <strong>{{ financeEvent.type }}</strong>
+              <span>{{ financeEvent.amount | currency }} | {{ financeEvent.description }}</span>
+            } @else {
+              <strong>No ledger entry yet</strong>
+              <span>The next matchday or transfer will put the first real mark on the books.</span>
+            }
           </article>
         </div>
       }
@@ -80,6 +461,10 @@
             <span class="summary-label">Morale</span>
             <strong>{{ activeDashboard()?.featuredPlayer?.morale ?? 0 }}</strong>
           </article>
+          <article>
+            <span class="summary-label">Status</span>
+            <strong>{{ activeDashboard()?.featuredPlayer?.isInjured ? 'In recovery' : 'Available' }}</strong>
+          </article>
         </div>
       }
     </article>
@@ -112,35 +497,6 @@
           <article>
             <span class="summary-label">Morale</span>
             <strong>{{ activeDashboard()?.lineup?.averageMorale ?? 0 }}</strong>
-          </article>
-        </div>
-      }
-    </article>
-
-    <article class="panel pulse-card">
-      <p class="label">Season Pulse</p>
-
-      @if (summaryState() === 'loading') {
-        <p class="supporting-copy">The club staff are preparing your latest briefing.</p>
-      } @else if (summaryState() === 'error') {
-        <p class="supporting-copy notes-error">{{ summaryMessage() }}</p>
-      } @else {
-        <h2>{{ activeDashboard()?.seasonName ?? activeGame()?.seasonName ?? 'Current Season' }}</h2>
-        <div class="pulse-grid">
-          <article>
-            <span class="summary-label">Budget</span>
-            <strong>{{ (activeDashboard()?.budget ?? 0) | currency }}</strong>
-          </article>
-          <article>
-            <span class="summary-label">Position</span>
-            <strong>{{ activeDashboard()?.leaguePosition ?? '-' }}</strong>
-          </article>
-          <article>
-            <span class="summary-label">Next Fixture</span>
-            <strong>{{ nextFixtureLabel() }}</strong>
-            @if (activeDashboard()?.nextFixture?.scheduledAt; as fixtureDate) {
-              <span class="fixture-date">{{ fixtureDate | date: 'EEE, d MMM' }}</span>
-            }
           </article>
         </div>
       }
@@ -191,3 +547,70 @@
     </article>
   }
 </section>
+
+@if (isLoadModalOpen()) {
+  <div class="modal-backdrop" (click)="closeLoadFlow()">
+    <section class="panel save-modal" aria-modal="true" role="dialog" (click)="$event.stopPropagation()">
+      <div class="card-head">
+        <div>
+          <p class="label">Recent Saves</p>
+          <h2>Career archive</h2>
+        </div>
+        <button
+          type="button"
+          class="modal-close"
+          [disabled]="loadingSaveId() !== null || deletingSaveId() !== null"
+          (click)="closeLoadFlow()">
+          Close
+        </button>
+      </div>
+
+      @if (saveState() === 'loading' && !recentSaves().length) {
+        <p class="notes-copy">Scanning the archive for the latest careers.</p>
+      } @else if (saveState() === 'error' && !recentSaves().length) {
+        <p class="notes-copy notes-error">{{ saveMessage() }}</p>
+      } @else if (recentSaves().length) {
+        <div class="save-list">
+          @for (save of recentSaves(); track save.gameId) {
+            <article class="save-row" [class.save-row-active]="isCurrentSave(save.gameId)">
+              <div class="save-copy">
+                <strong>{{ save.saveName }}</strong>
+                <span>{{ save.clubName }} | {{ save.seasonName }}</span>
+                <span>Updated {{ save.lastSavedAt | date: 'EEE, d MMM, y, HH:mm' }}</span>
+              </div>
+              <div class="save-actions">
+                @if (isCurrentSave(save.gameId)) {
+                  <span class="current-pill">Current</span>
+                } @else {
+                  <button
+                    type="button"
+                    class="save-button"
+                    [disabled]="isLoadingSave(save.gameId) || isDeletingSave(save.gameId)"
+                    (click)="loadSave(save.gameId)">
+                    {{ isLoadingSave(save.gameId) ? 'Loading...' : 'Load' }}
+                  </button>
+                }
+                <button
+                  type="button"
+                  class="delete-button"
+                  [disabled]="isLoadingSave(save.gameId) || isDeletingSave(save.gameId)"
+                  (click)="deleteSave(save)">
+                  {{ isDeletingSave(save.gameId) ? 'Deleting...' : 'Delete' }}
+                </button>
+              </div>
+            </article>
+          }
+        </div>
+      } @else {
+        <p class="notes-copy">No saved careers yet. Start a new game and the archive will track the journey.</p>
+      }
+    </section>
+  </div>
+}
+
+@if (deleteToastMessage()) {
+  <div class="toast toast-error" aria-live="assertive" role="alert">
+    <span>{{ deleteToastMessage() }}</span>
+    <button type="button" class="toast-close" (click)="dismissDeleteToast()">Dismiss</button>
+  </div>
+}

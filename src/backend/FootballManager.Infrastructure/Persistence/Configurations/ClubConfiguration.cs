@@ -40,5 +40,10 @@ public sealed class ClubConfiguration : IEntityTypeConfiguration<Club>
             .WithOne(player => player.Club)
             .HasForeignKey(player => player.ClubId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(club => club.AcademyPlayers)
+            .WithOne(player => player.Club)
+            .HasForeignKey(player => player.ClubId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

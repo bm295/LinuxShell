@@ -9,4 +9,6 @@ public sealed record FeaturedPlayerDto(
     int Fitness,
     int Morale,
     bool IsStarter,
+    bool IsInjured,
+    int InjuryMatchesRemaining,
     string Spotlight);
