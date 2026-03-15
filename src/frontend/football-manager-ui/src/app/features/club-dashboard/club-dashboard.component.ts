@@ -1,6 +1,6 @@
 import { CurrencyPipe, DatePipe, TitleCasePipe } from '@angular/common';
-import { Component, inject, OnInit, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { ActiveGameService } from '../../core/services/active-game.service';
 import { BootstrapApiService } from '../../core/services/bootstrap-api.service';
@@ -9,7 +9,7 @@ import { ClubDashboard } from '../../models/club-dashboard';
 @Component({
   selector: 'app-club-dashboard',
   standalone: true,
-  imports: [CurrencyPipe, DatePipe, TitleCasePipe],
+  imports: [CurrencyPipe, DatePipe, RouterLink, TitleCasePipe],
   templateUrl: './club-dashboard.component.html',
   styleUrl: './club-dashboard.component.scss'
 })
@@ -21,6 +21,9 @@ export class ClubDashboardComponent implements OnInit {
   readonly dashboard = signal<ClubDashboard | null>(null);
   readonly isLoading = signal(true);
   readonly errorMessage = signal<string | null>(null);
+  readonly currentGameId = signal<string | null>(null);
+  readonly squadLink = computed(() => this.currentGameId() ? `/squad/${this.currentGameId()}` : '/');
+  readonly lineupLink = computed(() => this.currentGameId() ? `/lineup/${this.currentGameId()}` : '/');
 
   ngOnInit(): void {
     const gameId = this.route.snapshot.paramMap.get('gameId');
@@ -31,6 +34,7 @@ export class ClubDashboardComponent implements OnInit {
       return;
     }
 
+    this.currentGameId.set(gameId);
     this.loadDashboard(gameId);
   }
 

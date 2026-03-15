@@ -1,0 +1,124 @@
+<section class="squad-shell">
+  @if (isLoading()) {
+    <div class="panel squad-panel">
+      <p class="feedback">Loading the squad board...</p>
+    </div>
+  } @else if (errorMessage()) {
+    <div class="panel squad-panel">
+      <p class="feedback feedback-error">{{ errorMessage() }}</p>
+    </div>
+  } @else {
+    @if (dashboard(); as data) {
+      <section class="panel squad-hero">
+        <div>
+          <p class="label">Squad Command</p>
+          <h1>{{ data.clubName }}</h1>
+          <p class="supporting-copy">
+            The dressing room is live. Check the pecking order, inspect individual form, and shape the next XI.
+          </p>
+        </div>
+
+        <div class="hero-actions">
+          <a [routerLink]="dashboardLink()" class="ghost-link">Club Dashboard</a>
+          <a [routerLink]="lineupLink()" class="primary-link">Edit Lineup</a>
+        </div>
+      </section>
+
+      <section class="summary-grid">
+        <article class="panel summary-card">
+          <span class="summary-label">Squad Size</span>
+          <strong>{{ players().length }}</strong>
+          <span>{{ starterCount() }} starters currently trusted</span>
+        </article>
+        <article class="panel summary-card">
+          <span class="summary-label">Average Rating</span>
+          <strong>{{ averageRating() }}</strong>
+          <span>Across the full senior group</span>
+        </article>
+        <article class="panel summary-card">
+          <span class="summary-label">Formation</span>
+          <strong>{{ data.lineup.formationName }}</strong>
+          <span>{{ data.lineup.readiness }}</span>
+        </article>
+        <article class="panel summary-card">
+          <span class="summary-label">Transfer Budget</span>
+          <strong>{{ data.budget | currency }}</strong>
+          <span>Still available for future moves</span>
+        </article>
+      </section>
+
+      <section class="panel breakdown-panel">
+        <div class="breakdown-head">
+          <div>
+            <p class="label">Selection Balance</p>
+            <h2>Where the squad stands</h2>
+          </div>
+          <a [routerLink]="lineupLink()" class="inline-link">Adjust the XI</a>
+        </div>
+
+        <div class="breakdown-grid">
+          <article>
+            <strong>{{ data.squadSummary.goalkeepers }}</strong>
+            <span>Goalkeepers</span>
+          </article>
+          <article>
+            <strong>{{ data.squadSummary.defenders }}</strong>
+            <span>Defenders</span>
+          </article>
+          <article>
+            <strong>{{ data.squadSummary.midfielders }}</strong>
+            <span>Midfielders</span>
+          </article>
+          <article>
+            <strong>{{ data.squadSummary.forwards }}</strong>
+            <span>Forwards</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel roster-panel">
+        <div class="roster-head">
+          <div>
+            <p class="label">Player Ladder</p>
+            <h2>Matchday decisions</h2>
+          </div>
+          <span class="roster-count">{{ players().length }} players</span>
+        </div>
+
+        <div class="player-grid">
+          @for (player of players(); track player.id) {
+            <a class="player-card" [routerLink]="['/player', gameId(), player.id]">
+              <div class="player-topline">
+                <span class="shirt-number">#{{ player.squadNumber }}</span>
+                @if (player.isStarter) {
+                  <span class="starter-badge">Starting XI</span>
+                }
+              </div>
+
+              <div class="player-copy">
+                <strong>{{ player.name }}</strong>
+                <span>{{ player.position | titlecase }}</span>
+              </div>
+
+              <div class="player-rating">
+                <span class="summary-label">Overall</span>
+                <strong>{{ player.overallRating }}</strong>
+              </div>
+
+              <div class="stat-strip">
+                <span>ATT {{ player.attack }}</span>
+                <span>DEF {{ player.defense }}</span>
+                <span>PAS {{ player.passing }}</span>
+              </div>
+
+              <div class="stat-strip muted-strip">
+                <span>FIT {{ player.fitness }}</span>
+                <span>MOR {{ player.morale }}</span>
+              </div>
+            </a>
+          }
+        </div>
+      </section>
+    }
+  }
+</section>

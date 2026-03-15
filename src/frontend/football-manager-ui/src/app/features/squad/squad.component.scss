@@ -1,0 +1,233 @@
+.squad-shell {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.squad-panel,
+.squad-hero,
+.breakdown-panel,
+.roster-panel {
+  padding: 1.6rem;
+}
+
+.squad-hero {
+  display: grid;
+  grid-template-columns: 1.4fr auto;
+  gap: 1.5rem;
+  align-items: end;
+  color: #fff;
+  background:
+    radial-gradient(circle at top right, rgba(240, 212, 161, 0.26), transparent 28%),
+    linear-gradient(145deg, rgba(21, 52, 47, 0.96), rgba(84, 38, 28, 0.92));
+}
+
+.squad-hero h1,
+.breakdown-head h2,
+.roster-head h2 {
+  margin: 0;
+}
+
+.supporting-copy,
+.summary-card span,
+.roster-count {
+  color: var(--muted);
+}
+
+.squad-hero .supporting-copy {
+  color: rgba(255, 245, 230, 0.8);
+  max-width: 50rem;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+}
+
+.summary-grid,
+.breakdown-grid,
+.player-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.summary-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.summary-card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1.2rem 1.15rem;
+}
+
+.summary-card strong {
+  font-size: 1.6rem;
+}
+
+.summary-label,
+.label {
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.75rem;
+}
+
+.label {
+  margin: 0 0 0.45rem;
+  color: var(--accent-strong);
+}
+
+.breakdown-panel,
+.roster-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.breakdown-head,
+.roster-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.breakdown-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.breakdown-grid article {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem 1.05rem;
+  border-radius: 1.1rem;
+  background: rgba(255, 250, 243, 0.75);
+}
+
+.breakdown-grid strong {
+  font-size: 1.5rem;
+}
+
+.player-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.player-card {
+  display: grid;
+  gap: 0.8rem;
+  padding: 1.15rem;
+  border-radius: 1.35rem;
+  text-decoration: none;
+  color: inherit;
+  border: 1px solid rgba(33, 48, 58, 0.08);
+  background: rgba(255, 252, 247, 0.82);
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.player-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 1rem 2.2rem rgba(39, 49, 58, 0.12);
+  border-color: rgba(159, 74, 45, 0.18);
+}
+
+.player-topline,
+.player-rating,
+.stat-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.player-copy {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.player-copy strong {
+  font-size: 1.15rem;
+}
+
+.shirt-number,
+.starter-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  min-height: 2rem;
+}
+
+.shirt-number {
+  min-width: 3rem;
+  padding: 0.3rem 0.75rem;
+  background: rgba(29, 40, 48, 0.08);
+}
+
+.starter-badge {
+  padding: 0.3rem 0.75rem;
+  background: rgba(120, 58, 36, 0.12);
+  color: var(--accent-strong);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.player-rating strong {
+  font-size: 1.75rem;
+}
+
+.stat-strip {
+  font-size: 0.88rem;
+  color: var(--text);
+}
+
+.muted-strip {
+  color: var(--muted);
+}
+
+.primary-link,
+.ghost-link,
+.inline-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.primary-link {
+  min-height: 3rem;
+  padding: 0.85rem 1.2rem;
+  background: rgba(255, 244, 229, 0.96);
+  color: #7d341f;
+}
+
+.ghost-link,
+.inline-link {
+  min-height: 3rem;
+  padding: 0.85rem 1.2rem;
+  color: inherit;
+  border: 1px solid rgba(255, 245, 230, 0.26);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.inline-link {
+  min-height: auto;
+  color: var(--accent-strong);
+  border-color: rgba(159, 74, 45, 0.12);
+  background: rgba(255, 255, 255, 0.58);
+}
+
+@media (max-width: 900px) {
+  .squad-hero,
+  .summary-grid,
+  .breakdown-grid,
+  .player-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .breakdown-head,
+  .roster-head {
+    flex-direction: column;
+  }
+}

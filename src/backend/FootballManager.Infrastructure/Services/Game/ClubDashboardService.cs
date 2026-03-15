@@ -1,6 +1,5 @@
 using FootballManager.Application.Contracts;
 using FootballManager.Application.Services;
-using FootballManager.Domain.Enums;
 using FootballManager.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,6 +12,8 @@ public sealed class ClubDashboardService(FootballManagerDbContext dbContext) : I
         var gameSave = await dbContext.GameSaves
             .Include(save => save.SelectedClub)
                 .ThenInclude(club => club!.Players)
+            .Include(save => save.Lineup)
+                .ThenInclude(lineup => lineup!.Formation)
             .Include(save => save.SelectedClub)
                 .ThenInclude(club => club!.League)
                     .ThenInclude(league => league!.Clubs)
@@ -26,6 +27,8 @@ public sealed class ClubDashboardService(FootballManagerDbContext dbContext) : I
         }
 
         var selectedClub = gameSave.SelectedClub;
+        var lineup = await LineupPlanner.EnsureLineupAsync(dbContext, gameSave, cancellationToken);
+        var starterIds = lineup.GetStarterPlayerIds().ToHashSet();
         var leagueClubs = selectedClub.League?.Clubs.OrderBy(club => club.Name).ToList() ?? [selectedClub];
         var standings = leagueClubs
             .OrderBy(club => club.Name)
@@ -40,18 +43,9 @@ public sealed class ClubDashboardService(FootballManagerDbContext dbContext) : I
             .FirstOrDefault();
 
         var clubNames = leagueClubs.ToDictionary(club => club.Id, club => club.Name);
-        var squadPlayers = selectedClub.Players
-            .OrderBy(player => player.SquadNumber)
-            .Select(player => new SquadPlayerDto(player.FullName, player.Position.ToString(), player.SquadNumber))
-            .ToList();
-
-        var squadSummary = new SquadSummaryDto(
-            squadPlayers.Count,
-            selectedClub.Players.Count(player => player.Position == PlayerPosition.Goalkeeper),
-            selectedClub.Players.Count(player => player.Position == PlayerPosition.Defender),
-            selectedClub.Players.Count(player => player.Position == PlayerPosition.Midfielder),
-            selectedClub.Players.Count(player => player.Position == PlayerPosition.Forward),
-            squadPlayers);
+        var squadSummary = SquadViewFactory.BuildSquadSummary(selectedClub.Players.ToList(), starterIds);
+        var lineupSummary = SquadViewFactory.BuildLineup(lineup, selectedClub.Players.ToList());
+        var featuredPlayer = SquadViewFactory.BuildFeaturedPlayer(selectedClub.Players.ToList(), starterIds);
 
         return new ClubDashboardDto(
             selectedClub.Name,
@@ -66,6 +60,8 @@ public sealed class ClubDashboardService(FootballManagerDbContext dbContext) : I
                     clubNames[nextFixture.AwayClubId],
                     nextFixture.ScheduledAt,
                     nextFixture.RoundNumber),
-            squadSummary);
+            squadSummary,
+            lineupSummary,
+            featuredPlayer);
     }
 }

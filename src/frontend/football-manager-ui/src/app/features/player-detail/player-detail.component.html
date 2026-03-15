@@ -1,0 +1,61 @@
+<section class="player-shell">
+  @if (isLoading()) {
+    <div class="panel player-panel">
+      <p class="feedback">Loading player profile...</p>
+    </div>
+  } @else if (errorMessage()) {
+    <div class="panel player-panel">
+      <p class="feedback feedback-error">{{ errorMessage() }}</p>
+    </div>
+  } @else {
+    @if (player(); as data) {
+      <section class="panel player-hero">
+        <div>
+          <p class="label">{{ clubName() }}</p>
+          <h1>#{{ data.squadNumber }} {{ data.name }}</h1>
+          <p class="supporting-copy">{{ data.position | titlecase }} | {{ data.roleStatus }}</p>
+          <p class="manager-note">{{ data.managerNote }}</p>
+        </div>
+
+        <div class="hero-stack">
+          <article>
+            <span class="summary-label">Overall</span>
+            <strong>{{ data.overallRating }}</strong>
+          </article>
+          <article>
+            <span class="summary-label">Selection</span>
+            <strong>{{ data.isStarter ? 'Starting XI' : 'Squad Depth' }}</strong>
+          </article>
+        </div>
+      </section>
+
+      <section class="action-row">
+        <a [routerLink]="squadLink()" class="ghost-link">Back to Squad</a>
+        <a [routerLink]="lineupLink()" class="primary-link">Edit Lineup</a>
+      </section>
+
+      <section class="panel metrics-panel">
+        <div class="metrics-head">
+          <div>
+            <p class="label">Match Traits</p>
+            <h2>What the staff sees</h2>
+          </div>
+        </div>
+
+        <div class="metric-list">
+          @for (metric of metricCards(); track metric.label) {
+            <article class="metric-card">
+              <div class="metric-topline">
+                <span>{{ metric.label }}</span>
+                <strong>{{ metric.value }}</strong>
+              </div>
+              <div class="metric-track">
+                <span class="metric-fill" [style.width.%]="metric.value"></span>
+              </div>
+            </article>
+          }
+        </div>
+      </section>
+    }
+  }
+</section>

@@ -13,6 +13,10 @@ public sealed class FootballManagerDbContext(DbContextOptions<FootballManagerDbC
 
     public DbSet<Player> Players => Set<Player>();
 
+    public DbSet<Formation> Formations => Set<Formation>();
+
+    public DbSet<Lineup> Lineups => Set<Lineup>();
+
     public DbSet<Season> Seasons => Set<Season>();
 
     public DbSet<Fixture> Fixtures => Set<Fixture>();

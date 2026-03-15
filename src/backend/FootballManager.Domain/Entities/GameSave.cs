@@ -27,4 +27,18 @@ public sealed class GameSave
     public Season? Season { get; private set; }
 
     public DateTime CreatedAt { get; private set; }
+
+    public Lineup? Lineup { get; private set; }
+
+    public Lineup SetLineup(Formation formation, IEnumerable<Guid> starterPlayerIds)
+    {
+        if (Lineup is null)
+        {
+            Lineup = new Lineup(this, formation, starterPlayerIds);
+            return Lineup;
+        }
+
+        Lineup.Update(formation, starterPlayerIds);
+        return Lineup;
+    }
 }

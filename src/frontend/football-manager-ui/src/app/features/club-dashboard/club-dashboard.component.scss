@@ -46,6 +46,13 @@ h3 {
   gap: 0.35rem;
 }
 
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
 .next-fixture strong {
   font-size: 1.15rem;
 }
@@ -86,6 +93,15 @@ h3 {
   background: rgba(255, 252, 247, 0.76);
 }
 
+.lineup-status {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 1rem;
+  background: rgba(255, 244, 229, 0.78);
+}
+
 .summary-metrics strong {
   display: block;
   font-size: 1.6rem;
@@ -113,6 +129,7 @@ h3 {
 .player-row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 1rem;
 }
 
@@ -121,10 +138,36 @@ h3 {
   display: block;
 }
 
+.starter-pill,
+.inline-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+}
+
+.starter-pill {
+  min-width: 2.5rem;
+  min-height: 2rem;
+  padding: 0.3rem 0.7rem;
+  color: var(--accent-strong);
+  background: rgba(159, 74, 45, 0.12);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
 .shirt-number {
   min-width: 3.5rem;
   font-weight: 700;
   color: var(--accent-strong);
+}
+
+.inline-link {
+  min-height: 2.5rem;
+  padding: 0.65rem 0.95rem;
+  text-decoration: none;
+  color: var(--accent-strong);
+  background: rgba(255, 255, 255, 0.68);
 }
 
 .feedback-error {

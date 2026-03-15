@@ -1,0 +1,104 @@
+<section class="editor-shell">
+  @if (isLoading()) {
+    <div class="panel editor-panel">
+      <p class="feedback">Loading the tactics room...</p>
+    </div>
+  } @else if (errorMessage()) {
+    <div class="panel editor-panel">
+      <p class="feedback feedback-error">{{ errorMessage() }}</p>
+    </div>
+  } @else {
+    @if (editorData(); as data) {
+      <section class="panel editor-hero">
+        <div>
+          <p class="label">Lineup Editor</p>
+          <h1>{{ data.clubName }}</h1>
+          <p class="supporting-copy">
+            Pick the shape, settle the starting places, and send a clear message into matchday.
+          </p>
+        </div>
+
+        <div class="hero-actions">
+          <a [routerLink]="dashboardLink()" class="ghost-link">Club Dashboard</a>
+          <a [routerLink]="squadLink()" class="ghost-link">Squad Board</a>
+        </div>
+      </section>
+
+      <section class="panel command-panel">
+        <div class="command-row">
+          <label class="formation-picker">
+            <span class="summary-label">Formation</span>
+            <select [value]="selectedFormationId()" (change)="onFormationChange($event)">
+              @for (formation of data.formations; track formation.id) {
+                <option [value]="formation.id">{{ formation.name }}</option>
+              }
+            </select>
+          </label>
+
+          <button type="button" class="save-button" [disabled]="!canSave()" (click)="saveLineup()">
+            {{ isSaving() ? 'Saving...' : 'Save Lineup' }}
+          </button>
+        </div>
+
+        <div class="summary-grid">
+          <article>
+            <span class="summary-label">Selected</span>
+            <strong>{{ summary().total }}/11</strong>
+          </article>
+          <article>
+            <span class="summary-label">Average Rating</span>
+            <strong>{{ summary().averageRating }}</strong>
+          </article>
+          <article>
+            <span class="summary-label">Fitness</span>
+            <strong>{{ summary().averageFitness }}</strong>
+          </article>
+          <article>
+            <span class="summary-label">Morale</span>
+            <strong>{{ summary().averageMorale }}</strong>
+          </article>
+        </div>
+
+        @if (feedbackMessage()) {
+          <p class="feedback-note" [class.feedback-success]="feedbackTone() === 'success'" [class.feedback-error]="feedbackTone() === 'error'">
+            {{ feedbackMessage() }}
+          </p>
+        }
+      </section>
+
+      <section class="position-grid">
+        @for (position of positions; track position) {
+          <article class="panel position-panel">
+            <div class="position-head">
+              <div>
+                <p class="label">{{ position }}</p>
+                <h2>{{ selectionCounts()[position] }}/{{ requirements()[position] }}</h2>
+              </div>
+              <span>{{ requirements()[position] === 1 ? 'Starter' : 'Starters' }}</span>
+            </div>
+
+            <div class="player-list">
+              @for (player of playerBuckets()[position]; track player.id) {
+                <button
+                  type="button"
+                  class="player-pick"
+                  [class.player-pick-selected]="isSelected(player.id)"
+                  [class.player-pick-locked]="isLocked(player)"
+                  (click)="togglePlayer(player)">
+                  <div class="pick-topline">
+                    <span class="shirt-number">#{{ player.squadNumber }}</span>
+                    <strong>{{ player.overallRating }}</strong>
+                  </div>
+                  <div class="pick-copy">
+                    <span>{{ player.name }}</span>
+                    <small>FIT {{ player.fitness }} | MOR {{ player.morale }}</small>
+                  </div>
+                </button>
+              }
+            </div>
+          </article>
+        }
+      </section>
+    }
+  }
+</section>

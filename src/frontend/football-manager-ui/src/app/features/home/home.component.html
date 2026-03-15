@@ -5,15 +5,118 @@
     <p class="intro-copy">{{ heroCopy() }}</p>
 
     <div class="cta-row">
-      <a routerLink="/new-game" class="primary-link">Start New Game</a>
-
       @if (activeGame()) {
-        <a [routerLink]="dashboardLink()" class="ghost-link">Continue to Dashboard</a>
+        <a [routerLink]="squadLink()" class="primary-link">Open Squad</a>
+        <a [routerLink]="lineupLink()" class="ghost-link">Edit Lineup</a>
+        <a [routerLink]="dashboardLink()" class="ghost-link">Club Dashboard</a>
+      } @else {
+        <a routerLink="/new-game" class="primary-link">Start New Game</a>
       }
     </div>
   </article>
 
   @if (activeGame()) {
+    <article class="panel squad-card">
+      <div class="card-head">
+        <div>
+          <p class="label">Squad Status</p>
+          <h2>{{ activeDashboard()?.clubName ?? activeGame()?.selectedClub }}</h2>
+        </div>
+        <a [routerLink]="squadLink()" class="inline-link">Open squad</a>
+      </div>
+
+      @if (summaryState() === 'error') {
+        <p class="notes-copy notes-error">{{ summaryMessage() }}</p>
+      } @else {
+        <p class="notes-copy">
+          The dressing room picture is shifting. Keep the balance between quality, readiness, and selection pressure.
+        </p>
+
+        <div class="summary-grid">
+          <article>
+            <span class="summary-label">Squad Size</span>
+            <strong>{{ activeDashboard()?.squadSummary?.totalPlayers ?? 0 }}</strong>
+          </article>
+          <article>
+            <span class="summary-label">Average Rating</span>
+            <strong>{{ activeDashboard()?.squadSummary?.averageRating ?? 0 }}</strong>
+          </article>
+          <article>
+            <span class="summary-label">Lineup Readiness</span>
+            <strong>{{ activeDashboard()?.lineup?.readiness ?? 'Briefing incoming' }}</strong>
+          </article>
+        </div>
+      }
+    </article>
+
+    <article class="panel featured-card">
+      <div class="card-head">
+        <div>
+          <p class="label">Featured Player</p>
+          <h2>{{ activeDashboard()?.featuredPlayer?.name ?? 'Selection watch' }}</h2>
+        </div>
+        @if (activeDashboard()?.featuredPlayer) {
+          <a [routerLink]="featuredPlayerLink()" class="inline-link">Open profile</a>
+        }
+      </div>
+
+      @if (summaryState() === 'loading') {
+        <p class="notes-copy">The staff are preparing the latest player report.</p>
+      } @else if (summaryState() === 'error') {
+        <p class="notes-copy notes-error">{{ summaryMessage() }}</p>
+      } @else {
+        <p class="notes-copy">{{ activeDashboard()?.featuredPlayer?.spotlight }}</p>
+
+        <div class="featured-grid">
+          <article>
+            <span class="summary-label">Role</span>
+            <strong>{{ featuredPlayerStatus() }}</strong>
+          </article>
+          <article>
+            <span class="summary-label">Overall</span>
+            <strong>{{ activeDashboard()?.featuredPlayer?.overallRating ?? 0 }}</strong>
+          </article>
+          <article>
+            <span class="summary-label">Morale</span>
+            <strong>{{ activeDashboard()?.featuredPlayer?.morale ?? 0 }}</strong>
+          </article>
+        </div>
+      }
+    </article>
+
+    <article class="panel lineup-card">
+      <div class="card-head">
+        <div>
+          <p class="label">Lineup Spotlight</p>
+          <h2>{{ activeDashboard()?.lineup?.formationName ?? 'Matchday shape' }}</h2>
+        </div>
+        <a [routerLink]="lineupLink()" class="inline-link">Edit lineup</a>
+      </div>
+
+      @if (summaryState() === 'loading') {
+        <p class="notes-copy">The coaches are sketching the current matchday shape.</p>
+      } @else if (summaryState() === 'error') {
+        <p class="notes-copy notes-error">{{ summaryMessage() }}</p>
+      } @else {
+        <p class="notes-copy">{{ lineupPrompt() }}</p>
+
+        <div class="summary-grid">
+          <article>
+            <span class="summary-label">Starters</span>
+            <strong>{{ activeDashboard()?.lineup?.starterCount ?? 0 }}/11</strong>
+          </article>
+          <article>
+            <span class="summary-label">Fitness</span>
+            <strong>{{ activeDashboard()?.lineup?.averageFitness ?? 0 }}</strong>
+          </article>
+          <article>
+            <span class="summary-label">Morale</span>
+            <strong>{{ activeDashboard()?.lineup?.averageMorale ?? 0 }}</strong>
+          </article>
+        </div>
+      }
+    </article>
+
     <article class="panel pulse-card">
       <p class="label">Season Pulse</p>
 
@@ -31,44 +134,6 @@
           <article>
             <span class="summary-label">Position</span>
             <strong>{{ activeDashboard()?.leaguePosition ?? '-' }}</strong>
-          </article>
-          <article>
-            <span class="summary-label">Points</span>
-            <strong>{{ activeDashboard()?.points ?? 0 }}</strong>
-          </article>
-        </div>
-      }
-    </article>
-
-    <article class="panel save-card">
-      <div class="save-header">
-        <div>
-          <p class="label">Active Save</p>
-          <h2>{{ activeDashboard()?.clubName ?? activeGame()?.selectedClub }}</h2>
-        </div>
-
-        @if (summaryState() === 'ready') {
-          <a [routerLink]="dashboardLink()" class="inline-link">Open dashboard</a>
-        }
-      </div>
-
-      @if (summaryState() === 'loading') {
-        <p class="notes-copy">Loading current save summary...</p>
-      } @else if (summaryState() === 'error') {
-        <p class="notes-copy notes-error">{{ summaryMessage() }}</p>
-      } @else {
-        <p class="notes-copy">
-          The campaign is underway. Review the club's identity, the current season, and the next challenge before you return to the dashboard.
-        </p>
-
-        <div class="summary-grid">
-          <article>
-            <span class="summary-label">Selected Club</span>
-            <strong>{{ activeDashboard()?.clubName ?? activeGame()?.selectedClub }}</strong>
-          </article>
-          <article>
-            <span class="summary-label">Season</span>
-            <strong>{{ activeDashboard()?.seasonName ?? activeGame()?.seasonName ?? 'Season pending' }}</strong>
           </article>
           <article>
             <span class="summary-label">Next Fixture</span>
@@ -120,7 +185,7 @@
         <article>
           <span class="summary-label">Next Step</span>
           <strong>Enter New Game</strong>
-          <p>Pick a club and move directly into the phase-1 dashboard flow.</p>
+          <p>Pick a club and move directly into the squad command flow.</p>
         </article>
       </div>
     </article>

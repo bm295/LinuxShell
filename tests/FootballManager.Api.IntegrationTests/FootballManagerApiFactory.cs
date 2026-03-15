@@ -31,6 +31,12 @@ public sealed class FootballManagerApiFactory : WebApplicationFactory<Program>
             dbContext.Database.EnsureDeleted();
             dbContext.Database.EnsureCreated();
 
+            if (!dbContext.Formations.Any())
+            {
+                dbContext.Formations.AddRange(SeedDataFactory.CreateFormations());
+                dbContext.SaveChanges();
+            }
+
             if (!dbContext.Leagues.Any(league => league.IsTemplate))
             {
                 dbContext.Leagues.Add(SeedDataFactory.CreateInitialLeague());

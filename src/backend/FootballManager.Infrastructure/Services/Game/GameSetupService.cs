@@ -52,7 +52,12 @@ public sealed class GameSetupService(FootballManagerDbContext dbContext) : IGame
                     templatePlayer.FirstName,
                     templatePlayer.LastName,
                     templatePlayer.Position,
-                    templatePlayer.SquadNumber);
+                    templatePlayer.SquadNumber,
+                    templatePlayer.Attack,
+                    templatePlayer.Defense,
+                    templatePlayer.Passing,
+                    templatePlayer.Fitness,
+                    templatePlayer.Morale);
             }
         }
 
@@ -64,6 +69,9 @@ public sealed class GameSetupService(FootballManagerDbContext dbContext) : IGame
 
         var selectedClub = clonedClubs[request.ClubId];
         var gameSave = new GameSave(selectedClub, season);
+        var defaultFormation = await LineupPlanner.GetDefaultFormationAsync(dbContext, cancellationToken);
+        var defaultStarters = LineupPlanner.SelectDefaultStarters(selectedClub, defaultFormation);
+        gameSave.SetLineup(defaultFormation, defaultStarters.Select(player => player.Id));
 
         dbContext.Leagues.Add(gameLeague);
         dbContext.GameSaves.Add(gameSave);

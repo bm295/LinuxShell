@@ -21,6 +21,7 @@ public static class DependencyInjection
         services.AddScoped<IBootstrapSummaryService, BootstrapSummaryService>();
         services.AddScoped<IGameSetupService, GameSetupService>();
         services.AddScoped<IClubDashboardService, ClubDashboardService>();
+        services.AddScoped<ISquadManagementService, SquadManagementService>();
         services.AddScoped<DatabaseInitializer>();
 
         return services;

@@ -33,14 +33,33 @@ public sealed class Club
 
     public ICollection<Player> Players { get; private set; } = [];
 
-    public Player AddPlayer(string firstName, string lastName, PlayerPosition position, int squadNumber)
+    public Player AddPlayer(
+        string firstName,
+        string lastName,
+        PlayerPosition position,
+        int squadNumber,
+        int attack,
+        int defense,
+        int passing,
+        int fitness,
+        int morale)
     {
         if (Players.Any(player => player.SquadNumber == squadNumber))
         {
             throw new InvalidOperationException($"Squad number '{squadNumber}' is already assigned at club '{Name}'.");
         }
 
-        var player = new Player(firstName, lastName, position, squadNumber, this);
+        var player = new Player(
+            firstName,
+            lastName,
+            position,
+            squadNumber,
+            attack,
+            defense,
+            passing,
+            fitness,
+            morale,
+            this);
         Players.Add(player);
         return player;
     }

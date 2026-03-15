@@ -13,7 +13,7 @@
         <div>
           <p class="label">Club Dashboard</p>
           <h2>{{ data.clubName }}</h2>
-          <p class="supporting-copy">{{ data.seasonName }} is active. This dashboard shows the selected club, current season standing, next fixture, and squad overview.</p>
+          <p class="supporting-copy">{{ data.seasonName }} is active. The club office is focused on lineup sharpness, squad pressure, and the next whistle.</p>
         </div>
 
         <div class="next-fixture">
@@ -25,6 +25,11 @@
           } @else {
             <span>No upcoming fixture scheduled.</span>
           }
+
+          <div class="hero-actions">
+            <a [routerLink]="squadLink()" class="inline-link">Open Squad</a>
+            <a [routerLink]="lineupLink()" class="inline-link">Edit Lineup</a>
+          </div>
         </div>
       </section>
 
@@ -38,8 +43,8 @@
           <span class="stat-label">League Position</span>
         </article>
         <article class="panel stat-card">
-          <span class="stat-value">{{ data.points }}</span>
-          <span class="stat-label">Points</span>
+          <span class="stat-value">{{ data.lineup.averageRating }}</span>
+          <span class="stat-label">Lineup Rating</span>
         </article>
         <article class="panel stat-card">
           <span class="stat-value">{{ data.squadSummary.totalPlayers }}</span>
@@ -68,6 +73,12 @@
               <span>Forwards</span>
             </div>
           </div>
+
+          <div class="lineup-status">
+            <p class="label">Current XI</p>
+            <strong>{{ data.lineup.formationName }}</strong>
+            <span>{{ data.lineup.readiness }}</span>
+          </div>
         </article>
 
         <article class="panel squad-panel">
@@ -85,8 +96,11 @@
                 <span class="shirt-number">#{{ player.squadNumber }}</span>
                 <div>
                   <strong>{{ player.name }}</strong>
-                  <span>{{ player.position | titlecase }}</span>
+                  <span>{{ player.position | titlecase }} | OVR {{ player.overallRating }}</span>
                 </div>
+                @if (player.isStarter) {
+                  <span class="starter-pill">XI</span>
+                }
               </div>
             }
           </div>

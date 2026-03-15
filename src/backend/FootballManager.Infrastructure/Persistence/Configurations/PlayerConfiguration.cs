@@ -34,6 +34,26 @@ public sealed class PlayerConfiguration : IEntityTypeConfiguration<Player>
             .HasColumnName("squad_number")
             .IsRequired();
 
+        builder.Property(player => player.Attack)
+            .HasColumnName("attack")
+            .IsRequired();
+
+        builder.Property(player => player.Defense)
+            .HasColumnName("defense")
+            .IsRequired();
+
+        builder.Property(player => player.Passing)
+            .HasColumnName("passing")
+            .IsRequired();
+
+        builder.Property(player => player.Fitness)
+            .HasColumnName("fitness")
+            .IsRequired();
+
+        builder.Property(player => player.Morale)
+            .HasColumnName("morale")
+            .IsRequired();
+
         builder.Property(player => player.CreatedAt)
             .HasColumnName("created_at")
             .HasColumnType("timestamp with time zone")

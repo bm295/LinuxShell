@@ -1,3 +1,6 @@
+import { Lineup } from './lineup';
+import { SquadSummary } from './squad';
+
 export interface ClubDashboard {
   clubName: string;
   seasonName: string;
@@ -6,6 +9,8 @@ export interface ClubDashboard {
   points: number;
   nextFixture: NextFixture | null;
   squadSummary: SquadSummary;
+  lineup: Lineup;
+  featuredPlayer: FeaturedPlayer;
 }
 
 export interface NextFixture {
@@ -15,17 +20,14 @@ export interface NextFixture {
   roundNumber: number;
 }
 
-export interface SquadSummary {
-  totalPlayers: number;
-  goalkeepers: number;
-  defenders: number;
-  midfielders: number;
-  forwards: number;
-  players: SquadPlayer[];
-}
-
-export interface SquadPlayer {
+export interface FeaturedPlayer {
+  id: string;
   name: string;
   position: string;
   squadNumber: number;
+  overallRating: number;
+  fitness: number;
+  morale: number;
+  isStarter: boolean;
+  spotlight: string;
 }

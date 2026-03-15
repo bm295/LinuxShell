@@ -7,6 +7,8 @@ import { ClubDashboard } from '../../models/club-dashboard';
 import { ClubOption } from '../../models/club-option';
 import { CreateNewGameResponse } from '../../models/create-new-game-response';
 import { HealthStatus } from '../../models/health-status';
+import { Lineup, LineupEditor, UpdateLineupRequest } from '../../models/lineup';
+import { PlayerDetail, SquadPlayer } from '../../models/squad';
 
 @Injectable({ providedIn: 'root' })
 export class BootstrapApiService {
@@ -30,5 +32,21 @@ export class BootstrapApiService {
 
   getClubDashboard(gameId: string): Observable<ClubDashboard> {
     return this.http.get<ClubDashboard>(`/api/club/dashboard?gameId=${encodeURIComponent(gameId)}`);
+  }
+
+  getSquad(gameId: string): Observable<SquadPlayer[]> {
+    return this.http.get<SquadPlayer[]>(`/api/squad?gameId=${encodeURIComponent(gameId)}`);
+  }
+
+  getPlayer(gameId: string, playerId: string): Observable<PlayerDetail> {
+    return this.http.get<PlayerDetail>(`/api/player/${encodeURIComponent(playerId)}?gameId=${encodeURIComponent(gameId)}`);
+  }
+
+  getLineup(gameId: string): Observable<LineupEditor> {
+    return this.http.get<LineupEditor>(`/api/lineup?gameId=${encodeURIComponent(gameId)}`);
+  }
+
+  saveLineup(gameId: string, request: UpdateLineupRequest): Observable<Lineup> {
+    return this.http.post<Lineup>(`/api/lineup?gameId=${encodeURIComponent(gameId)}`, request);
   }
 }

@@ -22,6 +22,7 @@ export class AppComponent {
 
     if (activeGame) {
       items.push({ label: 'Club Dashboard', path: `/dashboard/${activeGame.gameId}` });
+      items.push({ label: 'Squad', path: `/squad/${activeGame.gameId}` });
     }
 
     return items;

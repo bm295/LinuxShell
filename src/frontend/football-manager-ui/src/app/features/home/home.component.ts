@@ -30,6 +30,19 @@ export class HomeComponent implements OnInit {
     const activeGame = this.activeGame();
     return activeGame ? `/dashboard/${activeGame.gameId}` : '/new-game';
   });
+  readonly squadLink = computed(() => {
+    const activeGame = this.activeGame();
+    return activeGame ? `/squad/${activeGame.gameId}` : '/new-game';
+  });
+  readonly lineupLink = computed(() => {
+    const activeGame = this.activeGame();
+    return activeGame ? `/lineup/${activeGame.gameId}` : '/new-game';
+  });
+  readonly featuredPlayerLink = computed(() => {
+    const activeGame = this.activeGame();
+    const featuredPlayerId = this.activeDashboard()?.featuredPlayer.id;
+    return activeGame && featuredPlayerId ? `/player/${activeGame.gameId}/${featuredPlayerId}` : '/new-game';
+  });
   readonly nextFixtureLabel = computed(() => {
     const fixture = this.activeDashboard()?.nextFixture;
 
@@ -40,16 +53,28 @@ export class HomeComponent implements OnInit {
     return `${fixture.homeClub} vs ${fixture.awayClub}`;
   });
   readonly featuredClubs = computed(() => this.clubPreview().slice(0, 4));
-  readonly heroLabel = computed(() => this.activeGame() ? 'Manager Home' : 'Career Start');
+  readonly heroLabel = computed(() => this.activeGame() ? 'Club Command' : 'Career Start');
   readonly heroTitle = computed(() => {
     const currentClub = this.activeDashboard()?.clubName ?? this.activeGame()?.selectedClub;
     return currentClub
-      ? `${currentClub} is waiting for the next big call.`
+      ? `${currentClub} needs your next selection call.`
       : 'Choose your club and begin the climb.';
   });
   readonly heroCopy = computed(() => this.activeGame()
-    ? 'Your club is alive with expectation. Return to the touchline, review the season story, and push the campaign forward.'
+    ? 'The week now runs through the squad list. Balance form, fitness, and mood before the next whistle.'
     : 'A fresh fictional league is ready. Pick the badge, own the pressure, and start your first season as the manager in charge.');
+  readonly featuredPlayerStatus = computed(() => this.activeDashboard()?.featuredPlayer.isStarter
+    ? 'Driving the current XI'
+    : 'Pushing the starters in training');
+  readonly lineupPrompt = computed(() => {
+    const lineup = this.activeDashboard()?.lineup;
+
+    if (!lineup) {
+      return 'Shape the XI before the next fixture arrives.';
+    }
+
+    return `${lineup.formationName} is ${lineup.readiness.toLowerCase()}.`;
+  });
 
   constructor() {
     effect(() => {

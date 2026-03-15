@@ -22,9 +22,9 @@ public sealed class LeagueTests
     {
         var league = new League("Founders League");
         var club = league.AddClub("Northbridge FC", 1_000_000m);
-        club.AddPlayer("Alex", "Ward", PlayerPosition.Goalkeeper, 1);
+        club.AddPlayer("Alex", "Ward", PlayerPosition.Goalkeeper, 1, 45, 82, 60, 84, 79);
 
-        var action = () => club.AddPlayer("Theo", "Silva", PlayerPosition.Defender, 1);
+        var action = () => club.AddPlayer("Theo", "Silva", PlayerPosition.Defender, 1, 63, 80, 68, 81, 77);
 
         var exception = Assert.Throws<InvalidOperationException>(action);
         Assert.Contains("Squad number", exception.Message);

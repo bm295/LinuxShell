@@ -1,14 +1,12 @@
 namespace FootballManager.Application.Contracts;
 
-public sealed record SquadPlayerDto(
+public sealed record FeaturedPlayerDto(
     Guid Id,
     string Name,
     string Position,
     int SquadNumber,
-    int Attack,
-    int Defense,
-    int Passing,
+    int OverallRating,
     int Fitness,
     int Morale,
-    int OverallRating,
-    bool IsStarter);
+    bool IsStarter,
+    string Spotlight);

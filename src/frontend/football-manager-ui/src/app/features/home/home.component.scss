@@ -6,8 +6,10 @@
 
 .intro-card,
 .journey-card,
-.save-card,
+.squad-card,
 .pulse-card,
+.lineup-card,
+.featured-card,
 .spotlight-card,
 .notes-card {
   padding: 1.75rem;
@@ -120,28 +122,31 @@ h2 {
   color: var(--accent-strong);
 }
 
-.save-card,
-.journey-card {
-  grid-column: 1 / -1;
-}
-
+.squad-card,
+.featured-card,
+.lineup-card,
 .pulse-card,
 .spotlight-card,
-.save-card,
 .journey-card {
   display: grid;
   gap: 1rem;
 }
 
-.save-header {
+.card-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 1rem;
 }
 
-.summary-grid {
+.squad-card,
+.pulse-card,
+.journey-card {
+  grid-column: 1 / -1;
+}
+
+.summary-grid,
+.featured-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
@@ -164,6 +169,7 @@ h2 {
 }
 
 .summary-grid article,
+.featured-grid article,
 .pulse-grid article,
 .club-preview-grid article,
 .journey-grid article {
@@ -207,6 +213,7 @@ h2 {
   }
 
   .summary-grid,
+  .featured-grid,
   .pulse-grid,
   .club-preview-grid,
   .journey-grid {
@@ -219,7 +226,7 @@ h2 {
     max-width: none;
   }
 
-  .save-header {
+  .card-head {
     flex-direction: column;
   }
 }

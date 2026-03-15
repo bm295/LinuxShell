@@ -7,4 +7,6 @@ public sealed record ClubDashboardDto(
     int LeaguePosition,
     int Points,
     NextFixtureDto? NextFixture,
-    SquadSummaryDto SquadSummary);
+    SquadSummaryDto SquadSummary,
+    LineupDto Lineup,
+    FeaturedPlayerDto FeaturedPlayer);
