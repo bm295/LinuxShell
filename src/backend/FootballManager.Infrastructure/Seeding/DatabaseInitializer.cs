@@ -59,6 +59,7 @@ public sealed class DatabaseInitializer(FootballManagerDbContext dbContext, ILog
         await BackfillClubCaptainsAsync(cancellationToken);
         await BackfillPlayerAttributesAsync(cancellationToken);
         await BackfillAcademyPlayersAsync(cancellationToken);
+        await BackfillArsenalAcademyIdentitiesAsync(cancellationToken);
         await BackfillGameSaveMetadataAsync(cancellationToken);
     }
 
@@ -276,5 +277,46 @@ public sealed class DatabaseInitializer(FootballManagerDbContext dbContext, ILog
         {
             await dbContext.SaveChangesAsync(cancellationToken);
         }
+    }
+
+    private async Task BackfillArsenalAcademyIdentitiesAsync(CancellationToken cancellationToken)
+    {
+        var arsenalAcademyPlayers = await dbContext.AcademyPlayers
+            .Include(player => player.Club)
+            .Where(player => player.Club != null &&
+                             player.Club.Name == "Arsenal" &&
+                             ((player.FirstName == "Julian" && player.LastName == "Reed") ||
+                              (player.FirstName == "Isaac" && player.LastName == "Pereira")))
+            .ToListAsync(cancellationToken);
+        var arsenalSeniorPlayers = await dbContext.Players
+            .Include(player => player.Club)
+            .Where(player => player.Club != null &&
+                             player.Club.Name == "Arsenal" &&
+                             player.FirstName == "Isaac" &&
+                             player.LastName == "Pereira")
+            .ToListAsync(cancellationToken);
+
+        if (arsenalAcademyPlayers.Count == 0 && arsenalSeniorPlayers.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var player in arsenalAcademyPlayers)
+        {
+            if (player.FirstName == "Julian" && player.LastName == "Reed")
+            {
+                player.Rename("David", "Seaman");
+                continue;
+            }
+
+            player.Rename("Thierry", "Henry");
+        }
+
+        foreach (var player in arsenalSeniorPlayers)
+        {
+            player.Rename("Thierry", "Henry");
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

@@ -34,6 +34,8 @@ public sealed class MatchSimulationService(FootballManagerDbContext dbContext) :
         var selectedClub = gameSave.SelectedClub;
         var selectedLineup = await LineupPlanner.EnsureLineupAsync(dbContext, gameSave, cancellationToken);
         var defaultFormation = await LineupPlanner.GetDefaultFormationAsync(dbContext, cancellationToken);
+        var seniorSnapshots = CaptureSeniorSnapshots(selectedClub.Players);
+        var academySnapshots = CaptureAcademySnapshots(selectedClub.AcademyPlayers);
 
         var managedFixture = gameSave.Season.Fixtures
             .Where(fixture => !fixture.IsPlayed &&
@@ -57,6 +59,7 @@ public sealed class MatchSimulationService(FootballManagerDbContext dbContext) :
         var clubLookup = leagueClubs.ToDictionary(club => club.Id);
         var clubNames = leagueClubs.ToDictionary(club => club.Id, club => club.Name);
         var matchEvents = new List<MatchEventDto>();
+        var managedStarterIds = new HashSet<Guid>();
         var resultClock = DateTime.UtcNow;
 
         foreach (var fixture in roundFixtures)
@@ -84,6 +87,10 @@ public sealed class MatchSimulationService(FootballManagerDbContext dbContext) :
 
             if (fixture.Id == managedFixture.Id)
             {
+                var managedSelection = fixture.HomeClubId == selectedClub.Id ? homeSelection : awaySelection;
+                managedStarterIds = managedSelection.Starters
+                    .Select(player => player.Id)
+                    .ToHashSet();
                 matchEvents.AddRange(simulation.Events);
             }
         }
@@ -105,12 +112,16 @@ public sealed class MatchSimulationService(FootballManagerDbContext dbContext) :
             .OrderBy(matchEvent => matchEvent.Minute)
             .ThenBy(matchEvent => matchEvent.Type)
             .ToList();
+        var seniorPlayerDevelopment = BuildSeniorPlayerDevelopment(selectedClub, seniorSnapshots, managedStarterIds);
+        var academyDevelopment = BuildAcademyDevelopment(selectedClub, academySnapshots);
 
         return new SimulatedMatchResultDto(
             clubNames[managedFixture.HomeClubId],
             clubNames[managedFixture.AwayClubId],
             new MatchScoreDto(managedFixture.HomeGoals ?? 0, managedFixture.AwayGoals ?? 0),
             matchEvents,
+            seniorPlayerDevelopment,
+            academyDevelopment,
             clubStanding,
             nextFixture is null
                 ? null
@@ -455,12 +466,202 @@ public sealed class MatchSimulationService(FootballManagerDbContext dbContext) :
             : (int)Math.Round(materialized.Average(), MidpointRounding.AwayFromZero);
     }
 
+    private static IReadOnlyDictionary<Guid, PlayerSnapshot> CaptureSeniorSnapshots(IEnumerable<Player> players) =>
+        players.ToDictionary(
+            player => player.Id,
+            player => new PlayerSnapshot(
+                player.Attack,
+                player.Defense,
+                player.Passing,
+                player.Fitness,
+                player.Morale,
+                player.GetOverallRating()));
+
+    private static IReadOnlyDictionary<Guid, AcademySnapshot> CaptureAcademySnapshots(IEnumerable<AcademyPlayer> players) =>
+        players.ToDictionary(
+            player => player.Id,
+            player => new AcademySnapshot(
+                player.Attack,
+                player.Defense,
+                player.Passing,
+                player.Fitness,
+                player.Morale,
+                player.DevelopmentProgress,
+                player.GetOverallRating()));
+
+    private static IReadOnlyCollection<PlayerDevelopmentChangeDto> BuildSeniorPlayerDevelopment(
+        Club club,
+        IReadOnlyDictionary<Guid, PlayerSnapshot> snapshots,
+        IReadOnlySet<Guid> managedStarterIds)
+    {
+        return club.Players
+            .OrderBy(player => managedStarterIds.Contains(player.Id) ? 0 : 1)
+            .ThenBy(player => player.SquadNumber)
+            .ThenBy(player => player.LastName)
+            .ThenBy(player => player.FirstName)
+            .Select(player =>
+            {
+                var snapshot = snapshots[player.Id];
+                var overallDelta = CalculateSeniorReportOverallDelta(player, snapshot);
+                var overallRating = Math.Clamp(snapshot.OverallRating + overallDelta, 1, 100);
+
+                return new PlayerDevelopmentChangeDto(
+                    player.Id,
+                    player.FullName,
+                    player.Position.ToString(),
+                    player.Age,
+                    player.SquadNumber,
+                    player.IsCaptain,
+                    managedStarterIds.Contains(player.Id),
+                    overallRating,
+                    overallDelta,
+                    player.Attack,
+                    player.Attack - snapshot.Attack,
+                    player.Defense,
+                    player.Defense - snapshot.Defense,
+                    player.Passing,
+                    player.Passing - snapshot.Passing,
+                    player.Fitness,
+                    player.Fitness - snapshot.Fitness,
+                    player.Morale,
+                    player.Morale - snapshot.Morale);
+            })
+            .ToList();
+    }
+
+    private static IReadOnlyCollection<AcademyDevelopmentChangeDto> BuildAcademyDevelopment(
+        Club club,
+        IReadOnlyDictionary<Guid, AcademySnapshot> snapshots)
+    {
+        return club.AcademyPlayers
+            .OrderByDescending(player =>
+            {
+                var snapshot = snapshots[player.Id];
+                return (player.DevelopmentProgress - snapshot.DevelopmentProgress) * 1000 +
+                       (player.GetOverallRating() - snapshot.OverallRating);
+            })
+            .ThenByDescending(player => player.GetOverallRating())
+            .ThenBy(player => player.LastName)
+            .ThenBy(player => player.FirstName)
+            .Select(player =>
+            {
+                var snapshot = snapshots[player.Id];
+                var overallDelta = CalculateAcademyReportOverallDelta(player, snapshot);
+                var overallRating = Math.Clamp(snapshot.OverallRating + overallDelta, 1, 100);
+
+                return new AcademyDevelopmentChangeDto(
+                    player.Id,
+                    player.FullName,
+                    player.Position.ToString(),
+                    player.Age,
+                    player.TrainingFocus,
+                    overallRating,
+                    overallDelta,
+                    player.Attack,
+                    player.Attack - snapshot.Attack,
+                    player.Defense,
+                    player.Defense - snapshot.Defense,
+                    player.Passing,
+                    player.Passing - snapshot.Passing,
+                    player.Fitness,
+                    player.Fitness - snapshot.Fitness,
+                    player.Morale,
+                    player.Morale - snapshot.Morale,
+                    player.DevelopmentProgress,
+                    player.DevelopmentProgress - snapshot.DevelopmentProgress);
+            })
+            .ToList();
+    }
+
     private static void AdvanceAcademyDevelopment(IEnumerable<Club> clubs)
     {
         foreach (var academyPlayer in clubs.SelectMany(club => club.AcademyPlayers))
         {
             academyPlayer.AdvanceDevelopment();
         }
+    }
+
+    private static int CalculateSeniorReportOverallDelta(Player player, PlayerSnapshot snapshot)
+    {
+        var rawDelta = CalculateTechnicalDelta(
+                           player.Position,
+                           player.Attack - snapshot.Attack,
+                           player.Defense - snapshot.Defense,
+                           player.Passing - snapshot.Passing)
+                       + ((player.Fitness - snapshot.Fitness) * 0.10d)
+                       + ((player.Morale - snapshot.Morale) * 0.05d);
+
+        return NormalizeReportDelta(
+            rawDelta,
+            player.Fitness - snapshot.Fitness,
+            player.Attack - snapshot.Attack,
+            player.Passing - snapshot.Passing,
+            player.Defense - snapshot.Defense,
+            player.Morale - snapshot.Morale);
+    }
+
+    private static int CalculateAcademyReportOverallDelta(AcademyPlayer player, AcademySnapshot snapshot)
+    {
+        var rawDelta = CalculateTechnicalDelta(
+                           player.Position,
+                           player.Attack - snapshot.Attack,
+                           player.Defense - snapshot.Defense,
+                           player.Passing - snapshot.Passing)
+                       + ((player.Fitness - snapshot.Fitness) * 0.05d)
+                       + ((player.Morale - snapshot.Morale) * 0.05d)
+                       + ((player.DevelopmentProgress - snapshot.DevelopmentProgress) * 0.12d);
+
+        return NormalizeReportDelta(
+            rawDelta,
+            player.DevelopmentProgress - snapshot.DevelopmentProgress,
+            player.Attack - snapshot.Attack,
+            player.Passing - snapshot.Passing,
+            player.Defense - snapshot.Defense,
+            player.Fitness - snapshot.Fitness,
+            player.Morale - snapshot.Morale);
+    }
+
+    private static double CalculateTechnicalDelta(
+        PlayerPosition position,
+        int attackDelta,
+        int defenseDelta,
+        int passingDelta) =>
+        position switch
+        {
+            PlayerPosition.Goalkeeper => (attackDelta * 0.05d) + (defenseDelta * 0.75d) + (passingDelta * 0.20d),
+            PlayerPosition.Defender => (attackDelta * 0.15d) + (defenseDelta * 0.60d) + (passingDelta * 0.25d),
+            PlayerPosition.Midfielder => (attackDelta * 0.30d) + (defenseDelta * 0.25d) + (passingDelta * 0.45d),
+            PlayerPosition.Forward => (attackDelta * 0.60d) + (defenseDelta * 0.15d) + (passingDelta * 0.25d),
+            _ => (attackDelta + defenseDelta + passingDelta) / 3d
+        };
+
+    private static int NormalizeReportDelta(double rawDelta, params int[] fallbackSignals)
+    {
+        var roundedDelta = (int)Math.Round(rawDelta, MidpointRounding.AwayFromZero);
+        if (roundedDelta != 0)
+        {
+            return roundedDelta;
+        }
+
+        if (rawDelta > 0d)
+        {
+            return 1;
+        }
+
+        if (rawDelta < 0d)
+        {
+            return -1;
+        }
+
+        foreach (var signal in fallbackSignals)
+        {
+            if (signal != 0)
+            {
+                return Math.Sign(signal);
+            }
+        }
+
+        return 0;
     }
 
     private static string BuildSummary(Club selectedClub, LeagueTableEntryDto clubStanding, Fixture managedFixture)
@@ -546,6 +747,23 @@ public sealed class MatchSimulationService(FootballManagerDbContext dbContext) :
     private sealed record GoalHighlight(int Minute, Player Scorer);
 
     private sealed record PlayerInjury(Player Player, int Minute, int MatchesToMiss);
+
+    private sealed record PlayerSnapshot(
+        int Attack,
+        int Defense,
+        int Passing,
+        int Fitness,
+        int Morale,
+        int OverallRating);
+
+    private sealed record AcademySnapshot(
+        int Attack,
+        int Defense,
+        int Passing,
+        int Fitness,
+        int Morale,
+        int DevelopmentProgress,
+        int OverallRating);
 
     private sealed record FixtureSimulation(
         int HomeGoals,

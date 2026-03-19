@@ -31,6 +31,7 @@ After each match, player technical stats should adjust gradually based on age:
 - younger players trend upward over time
 - peak-age players stay relatively stable
 - older players begin to decline over time
+- these changes should be visible in a dedicated player development tab inside the post-match pop-up
 
 ---
 
@@ -66,6 +67,7 @@ Features:
 - save lineup
 - see player age and jersey number as part of the squad identity
 - see which player is the squad captain
+- review post-match player development changes for the full senior squad
 
 ---
 

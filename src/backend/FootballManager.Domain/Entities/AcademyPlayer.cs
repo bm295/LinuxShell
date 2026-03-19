@@ -102,6 +102,12 @@ public sealed class AcademyPlayer
 
     public bool IsPromotionReady() => GetPromotionReadiness() >= 72;
 
+    public void Rename(string firstName, string lastName)
+    {
+        FirstName = Guard.AgainstNullOrWhiteSpace(firstName, nameof(firstName));
+        LastName = Guard.AgainstNullOrWhiteSpace(lastName, nameof(lastName));
+    }
+
     public string GetTrainingStatus() =>
         DevelopmentProgress switch
         {
@@ -113,37 +119,35 @@ public sealed class AcademyPlayer
 
     public void AdvanceDevelopment()
     {
-        DevelopmentProgress = Math.Clamp(DevelopmentProgress + Random.Shared.Next(2, 6), 0, 100);
-        Fitness = Math.Clamp(Fitness + Random.Shared.Next(0, 3), 1, 100);
-        Morale = Math.Clamp(Morale + Random.Shared.Next(0, 3), 1, 100);
+        var overallBefore = GetOverallRating();
 
-        if (Potential <= GetOverallRating())
+        DevelopmentProgress = Math.Clamp(DevelopmentProgress + Random.Shared.Next(3, 7), 0, 100);
+        Fitness = Math.Clamp(Fitness + Random.Shared.Next(1, 4), 1, 100);
+        Morale = Math.Clamp(Morale + Random.Shared.Next(1, 4), 1, 100);
+
+        if (Potential <= overallBefore)
         {
             return;
         }
 
-        var improvementBudget = Random.Shared.Next(0, 3);
-        if (improvementBudget == 0)
-        {
-            return;
-        }
+        var focusGain = Random.Shared.Next(1, 3);
 
         switch (TrainingFocus)
         {
             case "Finishing":
-                Attack = ImproveAttribute(Attack, improvementBudget + 1);
+                Attack = ImproveAttribute(Attack, focusGain);
                 Passing = ImproveAttribute(Passing, 1);
                 break;
             case "Ball retention":
-                Passing = ImproveAttribute(Passing, improvementBudget + 1);
+                Passing = ImproveAttribute(Passing, focusGain);
                 Attack = ImproveAttribute(Attack, 1);
                 break;
             case "Defensive timing":
-                Defense = ImproveAttribute(Defense, improvementBudget + 1);
+                Defense = ImproveAttribute(Defense, focusGain);
                 Passing = ImproveAttribute(Passing, 1);
                 break;
             case "Tempo control":
-                Passing = ImproveAttribute(Passing, improvementBudget + 1);
+                Passing = ImproveAttribute(Passing, focusGain);
                 Defense = ImproveAttribute(Defense, 1);
                 break;
             default:
@@ -151,6 +155,21 @@ public sealed class AcademyPlayer
                 Defense = ImproveAttribute(Defense, 1);
                 Passing = ImproveAttribute(Passing, 1);
                 break;
+        }
+
+        if (GetOverallRating() > overallBefore)
+        {
+            return;
+        }
+
+        foreach (var attribute in ResolveGrowthPriority())
+        {
+            ApplyGrowth(attribute, 1);
+
+            if (GetOverallRating() > overallBefore)
+            {
+                return;
+            }
         }
     }
 
@@ -163,5 +182,38 @@ public sealed class AcademyPlayer
         }
 
         return Math.Min(ceiling, currentValue + Random.Shared.Next(1, maxGain + 1));
+    }
+
+    private IReadOnlyCollection<CoreAttribute> ResolveGrowthPriority() =>
+        TrainingFocus switch
+        {
+            "Finishing" => [CoreAttribute.Attack, CoreAttribute.Passing, CoreAttribute.Defense],
+            "Ball retention" => [CoreAttribute.Passing, CoreAttribute.Attack, CoreAttribute.Defense],
+            "Defensive timing" => [CoreAttribute.Defense, CoreAttribute.Passing, CoreAttribute.Attack],
+            "Tempo control" => [CoreAttribute.Passing, CoreAttribute.Defense, CoreAttribute.Attack],
+            _ => [CoreAttribute.Defense, CoreAttribute.Passing, CoreAttribute.Attack]
+        };
+
+    private void ApplyGrowth(CoreAttribute attribute, int maxGain)
+    {
+        switch (attribute)
+        {
+            case CoreAttribute.Attack:
+                Attack = ImproveAttribute(Attack, maxGain);
+                break;
+            case CoreAttribute.Defense:
+                Defense = ImproveAttribute(Defense, maxGain);
+                break;
+            default:
+                Passing = ImproveAttribute(Passing, maxGain);
+                break;
+        }
+    }
+
+    private enum CoreAttribute
+    {
+        Attack,
+        Defense,
+        Passing
     }
 }

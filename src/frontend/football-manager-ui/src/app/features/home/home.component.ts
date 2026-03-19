@@ -6,6 +6,7 @@ import { forkJoin } from 'rxjs';
 
 import { ActiveGameService } from '../../core/services/active-game.service';
 import { BootstrapApiService } from '../../core/services/bootstrap-api.service';
+import { GameMenuService } from '../../core/services/game-menu.service';
 import { AcademyPlayer, AcademySummary } from '../../models/academy';
 import { ClubDashboard } from '../../models/club-dashboard';
 import { ClubOption } from '../../models/club-option';
@@ -24,6 +25,7 @@ import { TransferMarket } from '../../models/transfer-market';
 export class HomeComponent implements OnInit, OnDestroy {
   private readonly api = inject(BootstrapApiService);
   private readonly activeGameService = inject(ActiveGameService);
+  private readonly gameMenuService = inject(GameMenuService);
   private deleteToastTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   readonly activeDashboard = signal<ClubDashboard | null>(null);
@@ -99,6 +101,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     return `${fixture.homeClub} vs ${fixture.awayClub}`;
   });
   readonly featuredClubs = computed(() => this.clubPreview().slice(0, 4));
+  readonly isHeroLoading = computed(() =>
+    !!this.activeGame() && !this.activeDashboard() && this.summaryState() !== 'error');
   readonly heroLabel = computed(() => this.activeGame() ? 'Matchday Hub' : 'Career Start');
   readonly heroTitle = computed(() => {
     const dashboard = this.activeDashboard();
@@ -360,6 +364,27 @@ export class HomeComponent implements OnInit, OnDestroy {
       }
 
       this.loadActiveSummary(activeGame.gameId);
+    });
+
+    effect(() => {
+      const pendingAction = this.gameMenuService.pendingAction();
+
+      if (!pendingAction) {
+        return;
+      }
+
+      if (pendingAction === 'load') {
+        this.gameMenuService.clearAction('load');
+        this.openLoadFlow();
+        return;
+      }
+
+      if (!this.activeGame() || this.isSavingGame() || this.loadingSaveId() || this.deletingSaveId()) {
+        return;
+      }
+
+      this.gameMenuService.clearAction('save');
+      this.saveCurrentGame();
     });
   }
 

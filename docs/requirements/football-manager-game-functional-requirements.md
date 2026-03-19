@@ -159,6 +159,8 @@ Promoted academy players must join the senior squad and become available through
 
 Each senior squad must always have exactly one captain.
 
+The system should surface post-match senior player development changes through a dedicated Player Development tab in the match results pop-up.
+
 Each player must include:
 
 - Name
@@ -228,6 +230,20 @@ After simulation, the system must update:
 - Injury status
 - Club finances
 - Academy training progress
+
+After each match simulation, the system must open a post-match pop-up or modal with exactly 3 tabs:
+
+- Match Review tab:
+  - show a banner-style summary panel at the top with the fixture and result
+  - list match events below the banner
+- Player Development tab:
+  - show each senior squad player's stat changes after the match
+  - clearly indicate increases and decreases
+- Academy Development tab:
+  - show academy or youth player stat increases after the match
+  - focus on development progress rather than match events
+
+The post-match pop-up must be the primary place where the player reviews the result and both senior and youth development before continuing.
 
 ---
 
@@ -347,3 +363,5 @@ Academy rules:
 - Promotion may be limited by squad size, club rules, or available registration space if those systems exist
 
 The system should display academy information on both the dedicated academy page and the home page.
+
+The system should also display academy development gains after match simulation through the Academy Development tab in the post-match pop-up.

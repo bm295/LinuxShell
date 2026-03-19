@@ -1,9 +1,9 @@
 <section class="match-shell">
-  @if (isLoading()) {
+  @if (isLoading() && !dashboard()) {
     <div class="panel match-panel">
       <p class="feedback">Loading the match briefing...</p>
     </div>
-  } @else if (errorMessage()) {
+  } @else if (errorMessage() && !dashboard()) {
     <div class="panel match-panel">
       <p class="feedback feedback-error">{{ errorMessage() }}</p>
     </div>
@@ -95,6 +95,15 @@
       @if (actionMessage()) {
         <div class="panel banner-panel">
           <p>{{ actionMessage() }}</p>
+          @if (simulationResult()) {
+            <button type="button" class="inline-action" (click)="openReport()">Open Match Report</button>
+          }
+        </div>
+      }
+
+      @if (errorMessage() && dashboard()) {
+        <div class="panel banner-panel banner-panel-error">
+          <p>{{ errorMessage() }}</p>
         </div>
       }
 
@@ -105,7 +114,10 @@
               <p class="label">Latest Result</p>
               <h2>{{ result.homeTeam }} {{ result.score.homeGoals }}-{{ result.score.awayGoals }} {{ result.awayTeam }}</h2>
             </div>
-            <a [routerLink]="homeLink()" class="inline-link">Return Home</a>
+            <div class="result-actions">
+              <button type="button" class="inline-action" (click)="openReport()">Open Match Report</button>
+              <a [routerLink]="homeLink()" class="inline-link">Return Home</a>
+            </div>
           </div>
 
           <p class="supporting-copy">{{ result.summary }}</p>
@@ -136,27 +148,6 @@
             </p>
           }
         </section>
-
-        <section class="panel events-panel">
-          <div class="events-head">
-            <div>
-              <p class="label">Match Events</p>
-              <h2>How it unfolded</h2>
-            </div>
-          </div>
-
-          <div class="event-list">
-            @for (event of result.matchEvents; track event.minute + event.description) {
-              <article class="event-row">
-                <span class="event-minute">{{ event.minute }}'</span>
-                <div>
-                  <strong>{{ event.type }}</strong>
-                  <p>{{ event.description }}</p>
-                </div>
-              </article>
-            }
-          </div>
-        </section>
       } @else if (data.recentResult) {
         <section class="panel result-panel">
           <p class="label">Recent Result</p>
@@ -169,3 +160,323 @@
     }
   }
 </section>
+
+@if (isReportModalOpen()) {
+  @if (simulationResult(); as result) {
+    <div class="modal-backdrop" (click)="closeReport()">
+      <section class="panel report-modal" aria-modal="true" role="dialog" (click)="$event.stopPropagation()">
+        <div class="result-head">
+          <div>
+            <p class="label">Post-match Report</p>
+            <h2>{{ result.homeTeam }} {{ result.score.homeGoals }}-{{ result.score.awayGoals }} {{ result.awayTeam }}</h2>
+          </div>
+          <button type="button" class="modal-close" (click)="closeReport()">Close</button>
+        </div>
+
+        <div class="report-tabs" role="tablist" aria-label="Post-match report tabs">
+          <button
+            type="button"
+            class="report-tab"
+            [class.report-tab-active]="activeReportTab() === 'review'"
+            (click)="selectReportTab('review')">
+            Match Review
+          </button>
+          <button
+            type="button"
+            class="report-tab"
+            [class.report-tab-active]="activeReportTab() === 'players'"
+            (click)="selectReportTab('players')">
+            Player Development
+          </button>
+          <button
+            type="button"
+            class="report-tab"
+            [class.report-tab-active]="activeReportTab() === 'academy'"
+            (click)="selectReportTab('academy')">
+            Academy Growth
+          </button>
+        </div>
+
+        @if (activeReportTab() === 'review') {
+          <div class="report-content">
+            <article class="report-banner">
+              <div>
+                <p class="label">Match Review</p>
+                <h3>{{ result.homeTeam }} {{ result.score.homeGoals }}-{{ result.score.awayGoals }} {{ result.awayTeam }}</h3>
+                <p class="supporting-copy">{{ result.summary }}</p>
+              </div>
+
+              <div class="standing-grid">
+                <article>
+                  <span class="summary-label">Position</span>
+                  <strong>{{ result.clubStanding.position }}</strong>
+                </article>
+                <article>
+                  <span class="summary-label">Points</span>
+                  <strong>{{ result.clubStanding.points }}</strong>
+                </article>
+                <article>
+                  <span class="summary-label">Played</span>
+                  <strong>{{ result.clubStanding.played }}</strong>
+                </article>
+                <article>
+                  <span class="summary-label">Goal Difference</span>
+                  <strong>{{ result.clubStanding.goalDifference }}</strong>
+                </article>
+              </div>
+            </article>
+
+            @if (result.nextFixture) {
+              <p class="next-fixture-note">
+                Next up: {{ result.nextFixture.homeClub }} vs {{ result.nextFixture.awayClub }} on
+                {{ result.nextFixture.scheduledAt | date: 'EEE, d MMM' }}.
+              </p>
+            }
+
+            <section class="report-section">
+              <div class="events-head">
+                <div>
+                  <p class="label">Match Events</p>
+                  <h3>How it unfolded</h3>
+                </div>
+              </div>
+
+              <div class="event-list">
+                @for (event of result.matchEvents; track event.minute + event.description) {
+                  <article class="event-row">
+                    <span class="event-minute">{{ event.minute }}'</span>
+                    <div>
+                      <strong>{{ event.type }}</strong>
+                      <p>{{ event.description }}</p>
+                    </div>
+                  </article>
+                }
+              </div>
+            </section>
+          </div>
+        } @else if (activeReportTab() === 'players') {
+          <div class="report-content">
+            <section class="report-section">
+              <div class="events-head">
+                <div>
+                  <p class="label">Player Development</p>
+                  <h3>Senior squad movement</h3>
+                </div>
+              </div>
+
+              <div class="development-list">
+                @for (change of seniorDevelopment(); track change.playerId) {
+                  <article class="development-row">
+                    <div class="development-head">
+                      <div class="development-copy">
+                        <strong>#{{ change.squadNumber }} {{ change.name }}</strong>
+                        <span>{{ change.position }} | Age {{ change.age }}</span>
+                        <div class="development-tags">
+                          @if (change.isCaptain) {
+                            <span class="status-pill">Captain</span>
+                          }
+                          <span class="status-pill" [class.status-pill-muted]="!change.playedMatch">
+                            {{ change.playedMatch ? 'Played match' : 'Bench / recovery' }}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div class="development-rating">
+                        <span class="summary-label">OVR</span>
+                        <strong>{{ change.overallRating }}</strong>
+                        <span
+                          class="delta-pill"
+                          [class.delta-positive]="change.overallDelta > 0"
+                          [class.delta-negative]="change.overallDelta < 0"
+                          [class.delta-neutral]="change.overallDelta === 0">
+                          {{ formatDelta(change.overallDelta) }}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div class="stat-change-grid">
+                      <article class="stat-change">
+                        <span class="summary-label">ATT</span>
+                        <strong>{{ change.attack }}</strong>
+                        <span
+                          class="delta-pill"
+                          [class.delta-positive]="change.attackDelta > 0"
+                          [class.delta-negative]="change.attackDelta < 0"
+                          [class.delta-neutral]="change.attackDelta === 0">
+                          {{ formatDelta(change.attackDelta) }}
+                        </span>
+                      </article>
+                      <article class="stat-change">
+                        <span class="summary-label">DEF</span>
+                        <strong>{{ change.defense }}</strong>
+                        <span
+                          class="delta-pill"
+                          [class.delta-positive]="change.defenseDelta > 0"
+                          [class.delta-negative]="change.defenseDelta < 0"
+                          [class.delta-neutral]="change.defenseDelta === 0">
+                          {{ formatDelta(change.defenseDelta) }}
+                        </span>
+                      </article>
+                      <article class="stat-change">
+                        <span class="summary-label">PAS</span>
+                        <strong>{{ change.passing }}</strong>
+                        <span
+                          class="delta-pill"
+                          [class.delta-positive]="change.passingDelta > 0"
+                          [class.delta-negative]="change.passingDelta < 0"
+                          [class.delta-neutral]="change.passingDelta === 0">
+                          {{ formatDelta(change.passingDelta) }}
+                        </span>
+                      </article>
+                      <article class="stat-change">
+                        <span class="summary-label">FIT</span>
+                        <strong>{{ change.fitness }}</strong>
+                        <span
+                          class="delta-pill"
+                          [class.delta-positive]="change.fitnessDelta > 0"
+                          [class.delta-negative]="change.fitnessDelta < 0"
+                          [class.delta-neutral]="change.fitnessDelta === 0">
+                          {{ formatDelta(change.fitnessDelta) }}
+                        </span>
+                      </article>
+                      <article class="stat-change">
+                        <span class="summary-label">MOR</span>
+                        <strong>{{ change.morale }}</strong>
+                        <span
+                          class="delta-pill"
+                          [class.delta-positive]="change.moraleDelta > 0"
+                          [class.delta-negative]="change.moraleDelta < 0"
+                          [class.delta-neutral]="change.moraleDelta === 0">
+                          {{ formatDelta(change.moraleDelta) }}
+                        </span>
+                      </article>
+                    </div>
+
+                    <p class="development-note">{{ seniorDevelopmentNote(change) }}</p>
+                  </article>
+                }
+              </div>
+            </section>
+          </div>
+        } @else {
+          <div class="report-content">
+            <section class="report-section">
+              <div class="events-head">
+                <div>
+                  <p class="label">Academy Growth</p>
+                  <h3>Youth progression</h3>
+                </div>
+              </div>
+
+              @if (academyDevelopment().length) {
+                <div class="development-list">
+                  @for (change of academyDevelopment(); track change.playerId) {
+                    <article class="development-row">
+                      <div class="development-head">
+                        <div class="development-copy">
+                          <strong>{{ change.name }}</strong>
+                          <span>{{ change.position }} | Age {{ change.age }}</span>
+                          <div class="development-tags">
+                            <span class="status-pill">{{ change.trainingFocus }}</span>
+                          </div>
+                        </div>
+
+                        <div class="development-rating">
+                          <span class="summary-label">OVR</span>
+                          <strong>{{ change.overallRating }}</strong>
+                          <span
+                            class="delta-pill"
+                            [class.delta-positive]="change.overallDelta > 0"
+                            [class.delta-negative]="change.overallDelta < 0"
+                            [class.delta-neutral]="change.overallDelta === 0">
+                            {{ formatDelta(change.overallDelta) }}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div class="stat-change-grid">
+                        <article class="stat-change">
+                          <span class="summary-label">ATT</span>
+                          <strong>{{ change.attack }}</strong>
+                          <span
+                            class="delta-pill"
+                            [class.delta-positive]="change.attackDelta > 0"
+                            [class.delta-negative]="change.attackDelta < 0"
+                            [class.delta-neutral]="change.attackDelta === 0">
+                            {{ formatDelta(change.attackDelta) }}
+                          </span>
+                        </article>
+                        <article class="stat-change">
+                          <span class="summary-label">DEF</span>
+                          <strong>{{ change.defense }}</strong>
+                          <span
+                            class="delta-pill"
+                            [class.delta-positive]="change.defenseDelta > 0"
+                            [class.delta-negative]="change.defenseDelta < 0"
+                            [class.delta-neutral]="change.defenseDelta === 0">
+                            {{ formatDelta(change.defenseDelta) }}
+                          </span>
+                        </article>
+                        <article class="stat-change">
+                          <span class="summary-label">PAS</span>
+                          <strong>{{ change.passing }}</strong>
+                          <span
+                            class="delta-pill"
+                            [class.delta-positive]="change.passingDelta > 0"
+                            [class.delta-negative]="change.passingDelta < 0"
+                            [class.delta-neutral]="change.passingDelta === 0">
+                            {{ formatDelta(change.passingDelta) }}
+                          </span>
+                        </article>
+                        <article class="stat-change">
+                          <span class="summary-label">FIT</span>
+                          <strong>{{ change.fitness }}</strong>
+                          <span
+                            class="delta-pill"
+                            [class.delta-positive]="change.fitnessDelta > 0"
+                            [class.delta-negative]="change.fitnessDelta < 0"
+                            [class.delta-neutral]="change.fitnessDelta === 0">
+                            {{ formatDelta(change.fitnessDelta) }}
+                          </span>
+                        </article>
+                        <article class="stat-change">
+                          <span class="summary-label">MOR</span>
+                          <strong>{{ change.morale }}</strong>
+                          <span
+                            class="delta-pill"
+                            [class.delta-positive]="change.moraleDelta > 0"
+                            [class.delta-negative]="change.moraleDelta < 0"
+                            [class.delta-neutral]="change.moraleDelta === 0">
+                            {{ formatDelta(change.moraleDelta) }}
+                          </span>
+                        </article>
+                        <article class="stat-change">
+                          <span class="summary-label">DEV</span>
+                          <strong>{{ change.developmentProgress }}</strong>
+                          <span
+                            class="delta-pill"
+                            [class.delta-positive]="change.developmentProgressDelta > 0"
+                            [class.delta-negative]="change.developmentProgressDelta < 0"
+                            [class.delta-neutral]="change.developmentProgressDelta === 0">
+                            {{ formatDelta(change.developmentProgressDelta) }}
+                          </span>
+                        </article>
+                      </div>
+
+                      <p class="development-note">{{ academyDevelopmentNote(change) }}</p>
+                    </article>
+                  }
+                </div>
+              } @else {
+                <div class="empty-state">
+                  <h3>No academy players in this save</h3>
+                  <p>The youth pipeline is empty right now, so there is no academy report for this round.</p>
+                </div>
+              }
+            </section>
+          </div>
+        }
+      </section>
+    </div>
+  }
+}

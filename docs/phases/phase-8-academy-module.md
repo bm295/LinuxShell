@@ -35,6 +35,11 @@ training status
 potential  
 promotion action
 
+Post-match academy review:
+
+- academy development should also surface in the post-match pop-up after match simulation
+- the academy tab in that pop-up should show which youth players improved and which stats increased
+
 ---
 
 ## Home Page Update
@@ -58,6 +63,8 @@ Interaction flow:
 5 User promotes a youth player to the senior squad
 6 Returning to `Home` updates squad and academy summaries
 
+The broader matchday flow should also let the user review academy growth immediately after each simulated match through the academy tab in the post-match pop-up.
+
 Presentation rules:
 
 - the home page should frame youth development as club-building ambition, not as a back-office tool
@@ -73,4 +80,5 @@ The home page should now support both short-term match decisions and long-term t
 Player can:
 
 view academy players  
-promote an academy player to the senior squad
+promote an academy player to the senior squad  
+review academy stat growth after a match

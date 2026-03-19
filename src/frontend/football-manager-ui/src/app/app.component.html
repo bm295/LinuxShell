@@ -9,10 +9,65 @@
     </a>
 
     <nav class="nav">
+      <a
+        routerLink="/"
+        class="nav-link"
+        (click)="closeGameMenu()"
+        routerLinkActive="nav-link-active"
+        [routerLinkActiveOptions]="{ exact: true }">
+        Home
+      </a>
+
+      <div
+        #gameMenuContainer
+        class="nav-menu"
+        (mouseenter)="openGameMenu()"
+        (mouseleave)="closeGameMenu()"
+        (focusin)="openGameMenu()"
+        (focusout)="handleGameMenuFocusOut($event)">
+        <button
+          type="button"
+          class="nav-link nav-button"
+          aria-haspopup="menu"
+          [attr.aria-expanded]="isGameMenuOpen()"
+          [class.nav-link-active]="isGameMenuOpen()"
+          (click)="openGameMenu($event)">
+          Game Menu
+        </button>
+
+        @if (isGameMenuOpen()) {
+          <div class="game-menu-panel" role="menu">
+            <button
+              type="button"
+              class="game-menu-item"
+              role="menuitem"
+              [disabled]="!hasActiveGame()"
+              (click)="triggerGameMenuAction('save')">
+              Save Game
+            </button>
+            <button
+              type="button"
+              class="game-menu-item"
+              role="menuitem"
+              (click)="triggerGameMenuAction('load')">
+              Load Game
+            </button>
+            <button
+              type="button"
+              class="game-menu-item"
+              role="menuitem"
+              (click)="openNewGame()">
+              New Game
+            </button>
+          </div>
+        }
+      </div>
+
       @for (item of navigation(); track item.path) {
         <a
           [routerLink]="item.path"
           class="nav-link"
+          (click)="closeGameMenu()"
           routerLinkActive="nav-link-active"
           [routerLinkActiveOptions]="{ exact: item.path === '/' }">
           {{ item.label }}

@@ -130,15 +130,14 @@ public static class SeedDataFactory
 
         for (var academyIndex = 0; academyIndex < 5; academyIndex++)
         {
-            var nameOffset = (clubIndex * 7 + academyIndex * 2 + 1) % FirstNames.Length;
-            var lastNameOffset = (clubIndex * 4 + academyIndex * 3 + 2) % LastNames.Length;
+            var academyPlayerName = ResolveAcademyPlayerName(clubName, clubIndex, academyIndex);
             var position = ResolveAcademyPosition(academyIndex);
             var focus = ResolveTrainingFocus(position, academyIndex);
             var attributes = ResolveAcademyAttributes(position, clubIndex, academyIndex);
 
             academyPlayers.Add(new AcademySeed(
-                FirstNames[nameOffset],
-                LastNames[lastNameOffset],
+                academyPlayerName.FirstName,
+                academyPlayerName.LastName,
                 position,
                 attributes.Age,
                 attributes.Attack,
@@ -324,6 +323,23 @@ public static class SeedDataFactory
 
         var nameOffset = (clubIndex * 3 + playerIndex) % FirstNames.Length;
         var lastNameOffset = (clubIndex * 5 + playerIndex) % LastNames.Length;
+        return (FirstNames[nameOffset], LastNames[lastNameOffset]);
+    }
+
+    private static (string FirstName, string LastName) ResolveAcademyPlayerName(string clubName, int clubIndex, int academyIndex)
+    {
+        if (clubName == "Arsenal" && academyIndex == 0)
+        {
+            return ("Thierry", "Henry");
+        }
+
+        if (clubName == "Arsenal" && academyIndex == 4)
+        {
+            return ("David", "Seaman");
+        }
+
+        var nameOffset = (clubIndex * 7 + academyIndex * 2 + 1) % FirstNames.Length;
+        var lastNameOffset = (clubIndex * 4 + academyIndex * 3 + 2) % LastNames.Length;
         return (FirstNames[nameOffset], LastNames[lastNameOffset]);
     }
 

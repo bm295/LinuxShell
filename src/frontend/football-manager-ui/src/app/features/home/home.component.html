@@ -1,27 +1,19 @@
 <section class="home-layout">
   <article class="panel intro-card">
     <p class="label">{{ heroLabel() }}</p>
-    <h1>{{ heroTitle() }}</h1>
-    <p class="intro-copy">{{ heroCopy() }}</p>
+    @if (isHeroLoading()) {
+      <div class="hero-loading" aria-hidden="true">
+        <span class="hero-skeleton hero-skeleton-title"></span>
+        <span class="hero-skeleton hero-skeleton-copy"></span>
+      </div>
+    } @else {
+      <h1>{{ heroTitle() }}</h1>
+      <p class="intro-copy">{{ heroCopy() }}</p>
+    }
 
     <div class="cta-row">
       @if (activeGame()) {
         <a [routerLink]="matchCenterLink()" class="primary-link">Play Next Match</a>
-        <button
-          type="button"
-          class="ghost-action"
-          [disabled]="isSavingGame() || loadingSaveId() !== null || deletingSaveId() !== null"
-          (click)="saveCurrentGame()">
-          {{ isSavingGame() ? 'Saving...' : 'Save Game' }}
-        </button>
-        <button
-          type="button"
-          class="ghost-action"
-          [disabled]="isSavingGame() || loadingSaveId() !== null || deletingSaveId() !== null"
-          (click)="openLoadFlow()">
-          Load Game
-        </button>
-        <a [routerLink]="academyLink()" class="ghost-link">Academy</a>
         <a [routerLink]="transferMarketLink()" class="ghost-link">Open Market</a>
         <a [routerLink]="lineupLink()" class="ghost-link">Edit Lineup</a>
         <a [routerLink]="squadLink()" class="ghost-link">Open Squad</a>
@@ -226,7 +218,7 @@
           @for (entry of nearbyTableRows(); track entry.clubId) {
             <article [class.league-row-active]="entry.clubName === activeDashboard()?.clubName">
               <span class="position-pill">{{ entry.position }}</span>
-              <div>
+              <div class="league-row-copy">
                 <strong>{{ entry.clubName }}</strong>
                 <span>{{ entry.points }} pts | GD {{ entry.goalDifference }}</span>
               </div>

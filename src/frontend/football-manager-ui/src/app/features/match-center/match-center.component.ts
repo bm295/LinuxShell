@@ -6,7 +6,9 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ActiveGameService } from '../../core/services/active-game.service';
 import { BootstrapApiService } from '../../core/services/bootstrap-api.service';
 import { ClubDashboard } from '../../models/club-dashboard';
-import { SimulatedMatchResult } from '../../models/match-simulation';
+import { AcademyDevelopmentChange, PlayerDevelopmentChange, SimulatedMatchResult } from '../../models/match-simulation';
+
+type MatchReportTab = 'review' | 'players' | 'academy';
 
 @Component({
   selector: 'app-match-center',
@@ -25,6 +27,8 @@ export class MatchCenterComponent implements OnInit {
   readonly simulationResult = signal<SimulatedMatchResult | null>(null);
   readonly isLoading = signal(true);
   readonly isSimulating = signal(false);
+  readonly isReportModalOpen = signal(false);
+  readonly activeReportTab = signal<MatchReportTab>('review');
   readonly errorMessage = signal<string | null>(null);
   readonly actionMessage = signal<string | null>(null);
   readonly dashboardLink = computed(() => this.gameId() ? `/dashboard/${this.gameId()}` : '/');
@@ -82,6 +86,30 @@ export class MatchCenterComponent implements OnInit {
 
     return `Round ${fixture.roundNumber} in ${dashboard.competitionName}. ${dashboard.momentumNote}`;
   });
+  readonly seniorDevelopment = computed(() => {
+    const result = this.simulationResult();
+
+    if (!result) {
+      return [];
+    }
+
+    return [...result.seniorPlayerDevelopment].sort((left, right) =>
+      Number(right.playedMatch) - Number(left.playedMatch) ||
+      left.squadNumber - right.squadNumber ||
+      left.name.localeCompare(right.name));
+  });
+  readonly academyDevelopment = computed(() => {
+    const result = this.simulationResult();
+
+    if (!result) {
+      return [];
+    }
+
+    return [...result.academyDevelopment].sort((left, right) =>
+      right.developmentProgressDelta - left.developmentProgressDelta ||
+      right.overallDelta - left.overallDelta ||
+      left.name.localeCompare(right.name));
+  });
 
   ngOnInit(): void {
     const gameId = this.route.snapshot.paramMap.get('gameId');
@@ -111,6 +139,8 @@ export class MatchCenterComponent implements OnInit {
       next: (result) => {
         this.simulationResult.set(result);
         this.actionMessage.set(result.summary);
+        this.activeReportTab.set('review');
+        this.isReportModalOpen.set(true);
         this.isSimulating.set(false);
         this.loadDashboard(gameId, true);
       },
@@ -121,22 +151,81 @@ export class MatchCenterComponent implements OnInit {
     });
   }
 
+  openReport(tab: MatchReportTab = 'review'): void {
+    if (!this.simulationResult()) {
+      return;
+    }
+
+    this.activeReportTab.set(tab);
+    this.isReportModalOpen.set(true);
+  }
+
+  closeReport(): void {
+    this.isReportModalOpen.set(false);
+  }
+
+  selectReportTab(tab: MatchReportTab): void {
+    this.activeReportTab.set(tab);
+  }
+
+  formatDelta(delta: number): string {
+    return delta > 0 ? `+${delta}` : `${delta}`;
+  }
+
+  hasSeniorCoreShift(change: PlayerDevelopmentChange): boolean {
+    return change.attackDelta !== 0 || change.defenseDelta !== 0 || change.passingDelta !== 0 || change.overallDelta !== 0;
+  }
+
+  hasAcademyCoreShift(change: AcademyDevelopmentChange): boolean {
+    return change.attackDelta !== 0 || change.defenseDelta !== 0 || change.passingDelta !== 0 || change.overallDelta !== 0;
+  }
+
+  seniorDevelopmentNote(change: PlayerDevelopmentChange): string {
+    if (this.hasSeniorCoreShift(change)) {
+      return change.playedMatch
+        ? 'Core attributes moved after match exposure.'
+        : 'Squad rotation still pushed development and condition changes.';
+    }
+
+    return change.playedMatch
+      ? 'No core attribute swing this round, but condition and morale still moved.'
+      : 'No core attribute swing this round. Recovery work carried the update.';
+  }
+
+  academyDevelopmentNote(change: AcademyDevelopmentChange): string {
+    if (this.hasAcademyCoreShift(change)) {
+      return 'Training delivered a visible technical gain this round.';
+    }
+
+    if (change.developmentProgressDelta > 0) {
+      return 'Progress moved forward even without a visible core attribute jump.';
+    }
+
+    return 'This round held the line more than it lifted the profile.';
+  }
+
   private loadDashboard(gameId: string, preserveResult = false): void {
     if (!preserveResult) {
       this.simulationResult.set(null);
+      this.isReportModalOpen.set(false);
+      this.activeReportTab.set('review');
+      this.isLoading.set(true);
     }
 
-    this.isLoading.set(true);
     this.errorMessage.set(null);
 
     this.api.getClubDashboard(gameId).subscribe({
       next: (dashboard) => {
         this.dashboard.set(dashboard);
         this.activeGameService.syncFromDashboard(gameId, dashboard);
+        this.errorMessage.set(null);
         this.isLoading.set(false);
       },
       error: () => {
-        this.errorMessage.set('The match briefing is unavailable. Reopen the save and try again.');
+        this.errorMessage.set(
+          preserveResult
+            ? 'The latest match briefing could not fully refresh, but the post-match report is still available.'
+            : 'The match briefing is unavailable. Reopen the save and try again.');
         this.isLoading.set(false);
       }
     });

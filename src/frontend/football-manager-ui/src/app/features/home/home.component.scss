@@ -53,6 +53,32 @@
   line-height: 0.95;
 }
 
+.hero-loading {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.hero-skeleton {
+  display: block;
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, rgba(255, 244, 229, 0.18), rgba(255, 255, 255, 0.46), rgba(255, 244, 229, 0.18));
+  background-size: 200% 100%;
+  animation: hero-shimmer 1.2s linear infinite;
+}
+
+.hero-skeleton-title {
+  width: min(32rem, 72%);
+  height: clamp(2.9rem, 7vw, 4.6rem);
+}
+
+.hero-skeleton-copy {
+  width: min(40rem, 86%);
+  height: 1.1rem;
+}
+
 .intro-copy,
 .notes-copy,
 .supporting-copy,
@@ -289,6 +315,11 @@ h2 {
   gap: 0.85rem;
 }
 
+.league-row-copy {
+  display: grid;
+  gap: 0.25rem;
+}
+
 .transfer-insight-grid article {
   display: grid;
   gap: 0.4rem;
@@ -499,6 +530,16 @@ h2 {
 
 .notes-error {
   color: #8b341f;
+}
+
+@keyframes hero-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 @media (max-width: 800px) {

@@ -125,9 +125,12 @@ public sealed class GameFlowTests
             $"/api/club/dashboard?gameId={createdGame.GameId}");
         var initialSquad = await client.GetFromJsonAsync<List<SquadPlayerDto>>(
             $"/api/squad?gameId={createdGame.GameId}");
+        var initialAcademy = await client.GetFromJsonAsync<AcademySummaryDto>(
+            $"/api/academy?gameId={createdGame.GameId}");
 
         Assert.NotNull(initialDashboard);
         Assert.NotNull(initialSquad);
+        Assert.NotNull(initialAcademy);
         var initialFixture = Assert.IsType<NextFixtureDto>(initialDashboard.NextFixture);
 
         var starterFitnessById = initialSquad
@@ -144,6 +147,16 @@ public sealed class GameFlowTests
         Assert.NotNull(simulation);
         Assert.NotEmpty(simulation.MatchEvents);
         Assert.Contains(simulation.MatchEvents, matchEvent => matchEvent.Type == "FullTime");
+        Assert.Equal(initialSquad.Count, simulation.SeniorPlayerDevelopment.Count);
+        Assert.Equal(initialAcademy.Players.Count, simulation.AcademyDevelopment.Count);
+        Assert.Contains(simulation.SeniorPlayerDevelopment, player => player.PlayedMatch);
+        Assert.All(simulation.SeniorPlayerDevelopment, player => Assert.NotEqual(0, player.OverallDelta));
+        Assert.Contains(
+            simulation.SeniorPlayerDevelopment,
+            player => player.FitnessDelta != 0 || player.MoraleDelta != 0 ||
+                      player.AttackDelta != 0 || player.DefenseDelta != 0 || player.PassingDelta != 0);
+        Assert.All(simulation.AcademyDevelopment, player => Assert.True(player.DevelopmentProgressDelta >= 3));
+        Assert.All(simulation.AcademyDevelopment, player => Assert.True(player.OverallDelta > 0));
         Assert.Equal(1, simulation.ClubStanding.Played);
         Assert.True(simulation.ClubStanding.Points is >= 0 and <= 3);
         Assert.False(string.IsNullOrWhiteSpace(simulation.Summary));
@@ -420,6 +433,10 @@ public sealed class GameFlowTests
         Assert.Equal("Arsenal", initialAcademy.ClubName);
         Assert.Equal(5, initialAcademy.Players.Count);
         Assert.NotNull(initialAcademy.SpotlightPlayer);
+        Assert.Contains(initialAcademy.Players, player => player.Name == "David Seaman");
+        Assert.Contains(initialAcademy.Players, player => player.Name == "Thierry Henry");
+        Assert.DoesNotContain(initialAcademy.Players, player => player.Name == "Julian Reed");
+        Assert.DoesNotContain(initialAcademy.Players, player => player.Name == "Isaac Pereira");
 
         var trackedProspect = initialAcademy.Players.First();
         var initialDevelopment = trackedProspect.DevelopmentProgress;
@@ -428,6 +445,15 @@ public sealed class GameFlowTests
             $"/api/match/simulate-next?gameId={createdGame.GameId}",
             content: null);
         simulateResponse.EnsureSuccessStatusCode();
+        var simulation = await simulateResponse.Content.ReadFromJsonAsync<SimulatedMatchResultDto>();
+
+        Assert.NotNull(simulation);
+        Assert.Equal(initialAcademy.Players.Count, simulation.AcademyDevelopment.Count);
+        Assert.All(simulation.AcademyDevelopment, player => Assert.True(player.DevelopmentProgressDelta >= 3));
+        Assert.All(simulation.AcademyDevelopment, player => Assert.True(player.OverallDelta > 0));
+        Assert.Contains(
+            simulation.AcademyDevelopment,
+            player => player.PlayerId == trackedProspect.PlayerId && player.DevelopmentProgressDelta > 0);
 
         var academyAfterMatch = await client.GetFromJsonAsync<AcademySummaryDto>(
             $"/api/academy?gameId={createdGame.GameId}");
