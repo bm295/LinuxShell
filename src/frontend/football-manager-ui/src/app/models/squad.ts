@@ -30,3 +30,7 @@ export interface PlayerDetail extends SquadPlayer {
   roleStatus: string;
   managerNote: string;
 }
+
+export interface UpdatePlayerPositionRequest {
+  position: string;
+}

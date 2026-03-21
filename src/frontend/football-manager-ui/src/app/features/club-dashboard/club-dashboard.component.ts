@@ -2,6 +2,7 @@ import { CurrencyPipe, DatePipe, TitleCasePipe } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
+import { appPaths, resolveGameId } from '../../core/routing/app-paths';
 import { ActiveGameService } from '../../core/services/active-game.service';
 import { BootstrapApiService } from '../../core/services/bootstrap-api.service';
 import { ClubDashboard } from '../../models/club-dashboard';
@@ -22,12 +23,12 @@ export class ClubDashboardComponent implements OnInit {
   readonly isLoading = signal(true);
   readonly errorMessage = signal<string | null>(null);
   readonly currentGameId = signal<string | null>(null);
-  readonly matchCenterLink = computed(() => this.currentGameId() ? `/match-center/${this.currentGameId()}` : '/');
-  readonly squadLink = computed(() => this.currentGameId() ? `/squad/${this.currentGameId()}` : '/');
-  readonly lineupLink = computed(() => this.currentGameId() ? `/lineup/${this.currentGameId()}` : '/');
+  readonly matchCenterLink = computed(() => this.currentGameId() ? appPaths.matchCenter : '/');
+  readonly squadLink = computed(() => this.currentGameId() ? appPaths.squad : '/');
+  readonly lineupLink = computed(() => this.currentGameId() ? appPaths.lineup : '/');
 
   ngOnInit(): void {
-    const gameId = this.route.snapshot.paramMap.get('gameId');
+    const gameId = resolveGameId(this.activeGameService, this.route);
 
     if (!gameId) {
       this.errorMessage.set('Missing game identifier. Start a new game first.');

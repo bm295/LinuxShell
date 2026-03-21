@@ -19,27 +19,36 @@ internal static class LineupPlanner
             throw new InvalidOperationException("The selected club is required before a lineup can be created.");
         }
 
-        if (gameSave.Lineup?.Formation is not null)
+        var formations = await dbContext.Formations
+            .OrderBy(formation => formation.Name)
+            .ToListAsync(cancellationToken);
+        var preferredStarterIds = gameSave.Lineup?.GetStarterPlayerIds() ?? [];
+
+        foreach (var formation in ResolveFormationCandidates(formations, gameSave.Lineup?.Formation))
         {
-            var updatedStarters = SelectPreferredStarters(
-                gameSave.SelectedClub,
-                gameSave.Lineup.Formation,
-                gameSave.Lineup.GetStarterPlayerIds());
-
-            if (!gameSave.Lineup.GetStarterPlayerIds().ToHashSet().SetEquals(updatedStarters.Select(player => player.Id)))
+            try
             {
-                gameSave.SetLineup(gameSave.Lineup.Formation, updatedStarters.Select(player => player.Id));
-                await dbContext.SaveChangesAsync(cancellationToken);
-            }
+                var starters = SelectPreferredStarters(gameSave.SelectedClub, formation, preferredStarterIds);
+                var starterIds = starters.Select(player => player.Id).ToArray();
+                var hasFormationChanged = gameSave.Lineup?.FormationId != formation.Id;
+                var hasStarterChanged = gameSave.Lineup is null ||
+                    !gameSave.Lineup.GetStarterPlayerIds().ToHashSet().SetEquals(starterIds);
 
-            return gameSave.Lineup;
+                if (gameSave.Lineup is null || hasFormationChanged || hasStarterChanged)
+                {
+                    gameSave.SetLineup(formation, starterIds);
+                    await dbContext.SaveChangesAsync(cancellationToken);
+                }
+
+                return gameSave.Lineup!;
+            }
+            catch (InvalidOperationException)
+            {
+                // Try the next compatible formation before failing the save.
+            }
         }
 
-        var defaultFormation = await GetDefaultFormationAsync(dbContext, cancellationToken);
-        var starters = SelectDefaultStarters(gameSave.SelectedClub, defaultFormation);
-        var lineup = gameSave.SetLineup(defaultFormation, starters.Select(player => player.Id));
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return lineup;
+        throw new InvalidOperationException("The squad does not have enough available players to build a valid lineup.");
     }
 
     public static async Task<Formation> GetDefaultFormationAsync(
@@ -143,6 +152,29 @@ internal static class LineupPlanner
 
     private static double GetStarterScore(Player player) =>
         player.GetOverallRating() + (player.GetReadinessScore() * 0.35);
+
+    private static IReadOnlyCollection<Formation> ResolveFormationCandidates(
+        IReadOnlyCollection<Formation> formations,
+        Formation? currentFormation)
+    {
+        var defaultFormation = formations.SingleOrDefault(formation => formation.Name == DefaultFormationName)
+            ?? throw new InvalidOperationException("Default formation data is unavailable.");
+
+        var candidates = new List<Formation>();
+
+        if (currentFormation is not null)
+        {
+            candidates.Add(currentFormation);
+        }
+
+        if (candidates.All(candidate => candidate.Id != defaultFormation.Id))
+        {
+            candidates.Add(defaultFormation);
+        }
+
+        candidates.AddRange(formations.Where(formation => candidates.All(candidate => candidate.Id != formation.Id)));
+        return candidates;
+    }
 
     private static void ValidatePositionCount(
         IReadOnlyCollection<Player> starters,

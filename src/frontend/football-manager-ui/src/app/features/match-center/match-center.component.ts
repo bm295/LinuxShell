@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
+import { appPaths, resolveGameId } from '../../core/routing/app-paths';
 import { ActiveGameService } from '../../core/services/active-game.service';
 import { BootstrapApiService } from '../../core/services/bootstrap-api.service';
 import { ClubDashboard } from '../../models/club-dashboard';
@@ -31,9 +32,9 @@ export class MatchCenterComponent implements OnInit {
   readonly activeReportTab = signal<MatchReportTab>('review');
   readonly errorMessage = signal<string | null>(null);
   readonly actionMessage = signal<string | null>(null);
-  readonly dashboardLink = computed(() => this.gameId() ? `/dashboard/${this.gameId()}` : '/');
-  readonly lineupLink = computed(() => this.gameId() ? `/lineup/${this.gameId()}` : '/');
-  readonly homeLink = computed(() => '/');
+  readonly dashboardLink = computed(() => this.gameId() ? appPaths.dashboard : '/');
+  readonly lineupLink = computed(() => this.gameId() ? appPaths.lineup : '/');
+  readonly homeLink = computed(() => appPaths.home);
   readonly nextFixture = computed(() => this.dashboard()?.nextFixture ?? null);
   readonly opponentName = computed(() => {
     const dashboard = this.dashboard();
@@ -112,7 +113,7 @@ export class MatchCenterComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    const gameId = this.route.snapshot.paramMap.get('gameId');
+    const gameId = resolveGameId(this.activeGameService, this.route);
 
     if (!gameId) {
       this.errorMessage.set('Missing game identifier. Start a new game before opening Match Center.');

@@ -2,8 +2,11 @@ import { Component, computed, ElementRef, HostListener, inject, signal, ViewChil
 import { Router } from '@angular/router';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
+import { appPaths } from './core/routing/app-paths';
 import { ActiveGameService } from './core/services/active-game.service';
 import { GameMenuAction, GameMenuService } from './core/services/game-menu.service';
+
+type AppMenuKey = 'game' | 'club' | 'league';
 
 @Component({
   selector: 'app-root',
@@ -17,51 +20,82 @@ export class AppComponent {
   private readonly gameMenuService = inject(GameMenuService);
   private readonly router = inject(Router);
   @ViewChild('gameMenuContainer') private gameMenuContainer?: ElementRef<HTMLElement>;
-  readonly isGameMenuOpen = signal(false);
+  @ViewChild('clubMenuContainer') private clubMenuContainer?: ElementRef<HTMLElement>;
+  @ViewChild('leagueMenuContainer') private leagueMenuContainer?: ElementRef<HTMLElement>;
+  readonly activeMenu = signal<AppMenuKey | null>(null);
+
+  readonly clubNavigation = computed(() => {
+    const activeGame = this.activeGameService.activeGame();
+    return activeGame
+      ? [
+          { label: 'Club Dashboard', path: appPaths.dashboard },
+          { label: 'Squad', path: appPaths.squad },
+          { label: 'Line Up', path: appPaths.lineup },
+          { label: 'Academy', path: appPaths.academy }
+        ]
+      : [];
+  });
 
   readonly navigation = computed(() => {
     const items: Array<{ label: string; path: string }> = [];
     const activeGame = this.activeGameService.activeGame();
 
     if (activeGame) {
-      items.push({ label: 'Match Center', path: `/match-center/${activeGame.gameId}` });
-      items.push({ label: 'Academy', path: `/academy/${activeGame.gameId}` });
-      items.push({ label: 'League Table', path: `/league-table/${activeGame.gameId}` });
-      items.push({ label: 'Fixtures', path: `/fixtures/${activeGame.gameId}` });
-      items.push({ label: 'Transfer Market', path: `/transfer-market/${activeGame.gameId}` });
-      items.push({ label: 'Finances', path: `/finances/${activeGame.gameId}` });
-      items.push({ label: 'Club Dashboard', path: `/dashboard/${activeGame.gameId}` });
-      items.push({ label: 'Squad', path: `/squad/${activeGame.gameId}` });
-      items.push({ label: 'Lineup', path: `/lineup/${activeGame.gameId}` });
+      items.push({ label: 'Transfer Market', path: appPaths.transferMarket });
+      items.push({ label: 'Finances', path: appPaths.finances });
     }
 
     return items;
   });
+  readonly leagueNavigation = computed(() => {
+    const activeGame = this.activeGameService.activeGame();
+    return activeGame
+      ? [
+          { label: 'Match Center', path: appPaths.matchCenter },
+          { label: 'League Table', path: appPaths.leagueTable },
+          { label: 'Fixtures', path: appPaths.fixtures }
+        ]
+      : [];
+  });
 
   readonly hasActiveGame = computed(() => this.activeGameService.activeGame() !== null);
 
-  openGameMenu(event?: Event): void {
+  isMenuOpen(menu: AppMenuKey): boolean {
+    return this.activeMenu() === menu;
+  }
+
+  openMenu(menu: AppMenuKey, event?: Event): void {
     event?.stopPropagation();
-    this.isGameMenuOpen.set(true);
+    this.activeMenu.set(menu);
   }
 
-  closeGameMenu(): void {
-    this.isGameMenuOpen.set(false);
-  }
-
-  handleGameMenuFocusOut(event: FocusEvent): void {
-    const nextFocusedElement = event.relatedTarget;
-
-    if (nextFocusedElement && this.gameMenuContainer?.nativeElement.contains(nextFocusedElement as Node)) {
+  closeMenu(menu?: AppMenuKey): void {
+    if (menu && this.activeMenu() !== menu) {
       return;
     }
 
-    this.closeGameMenu();
+    this.activeMenu.set(null);
+  }
+
+  handleMenuFocusOut(event: FocusEvent, menu: AppMenuKey): void {
+    const nextFocusedElement = event.relatedTarget;
+    const menuContainer = this.getMenuContainer(menu);
+
+    if (nextFocusedElement && menuContainer?.contains(nextFocusedElement as Node)) {
+      return;
+    }
+
+    this.closeMenu(menu);
   }
 
   openNewGame(): void {
-    this.closeGameMenu();
-    void this.router.navigateByUrl('/new-game');
+    this.closeMenu();
+    void this.router.navigateByUrl(appPaths.newGame);
+  }
+
+  navigateTo(path: string): void {
+    this.closeMenu();
+    void this.router.navigateByUrl(path);
   }
 
   triggerGameMenuAction(action: GameMenuAction): void {
@@ -70,23 +104,39 @@ export class AppComponent {
     }
 
     this.gameMenuService.requestAction(action);
-    this.closeGameMenu();
-    void this.router.navigateByUrl('/');
+    this.closeMenu();
+    void this.router.navigateByUrl(appPaths.home);
   }
 
   @HostListener('document:click', ['$event'])
   handleDocumentClick(event: MouseEvent): void {
-    if (!this.isGameMenuOpen()) {
+    if (!this.activeMenu()) {
       return;
     }
 
-    if (!this.gameMenuContainer?.nativeElement.contains(event.target as Node)) {
-      this.closeGameMenu();
+    const target = event.target as Node;
+    if (
+      !this.gameMenuContainer?.nativeElement.contains(target) &&
+      !this.clubMenuContainer?.nativeElement.contains(target) &&
+      !this.leagueMenuContainer?.nativeElement.contains(target)
+    ) {
+      this.closeMenu();
     }
   }
 
   @HostListener('document:keydown.escape')
   handleEscape(): void {
-    this.closeGameMenu();
+    this.closeMenu();
+  }
+
+  private getMenuContainer(menu: AppMenuKey): HTMLElement | undefined {
+    switch (menu) {
+      case 'game':
+        return this.gameMenuContainer?.nativeElement;
+      case 'club':
+        return this.clubMenuContainer?.nativeElement;
+      default:
+        return this.leagueMenuContainer?.nativeElement;
+    }
   }
 }

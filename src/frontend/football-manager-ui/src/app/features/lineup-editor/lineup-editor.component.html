@@ -31,7 +31,7 @@
             <span class="summary-label">Formation</span>
             <select [value]="selectedFormationId()" (change)="onFormationChange($event)">
               @for (formation of data.formations; track formation.id) {
-                <option [value]="formation.id">{{ formation.name }}</option>
+                <option [value]="formation.id" [selected]="formation.id === selectedFormationId()">{{ formation.name }}</option>
               }
             </select>
           </label>

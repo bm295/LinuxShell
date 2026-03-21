@@ -2,6 +2,7 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
+import { appPaths, resolveGameId } from '../../core/routing/app-paths';
 import { ActiveGameService } from '../../core/services/active-game.service';
 import { BootstrapApiService } from '../../core/services/bootstrap-api.service';
 import { ClubDashboard } from '../../models/club-dashboard';
@@ -24,8 +25,8 @@ export class LeagueTableComponent implements OnInit {
   readonly table = signal<LeagueTableEntry[]>([]);
   readonly isLoading = signal(true);
   readonly errorMessage = signal<string | null>(null);
-  readonly matchCenterLink = computed(() => this.gameId() ? `/match-center/${this.gameId()}` : '/');
-  readonly fixturesLink = computed(() => this.gameId() ? `/fixtures/${this.gameId()}` : '/');
+  readonly matchCenterLink = computed(() => this.gameId() ? appPaths.matchCenter : '/');
+  readonly fixturesLink = computed(() => this.gameId() ? appPaths.fixtures : '/');
   readonly currentClubRow = computed(() =>
     this.table().find((entry) => entry.clubName === this.dashboard()?.clubName) ?? null);
   readonly pressureRows = computed(() => {
@@ -42,7 +43,7 @@ export class LeagueTableComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    const gameId = this.route.snapshot.paramMap.get('gameId');
+    const gameId = resolveGameId(this.activeGameService, this.route);
 
     if (!gameId) {
       this.errorMessage.set('Missing game identifier. Open a save before viewing the league table.');

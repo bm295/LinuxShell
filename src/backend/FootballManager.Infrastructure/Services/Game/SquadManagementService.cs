@@ -1,5 +1,6 @@
 using FootballManager.Application.Contracts;
 using FootballManager.Application.Services;
+using FootballManager.Domain.Enums;
 using FootballManager.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -37,6 +38,52 @@ public sealed class SquadManagementService(FootballManagerDbContext dbContext) :
         return player is null
             ? null
             : SquadViewFactory.BuildPlayerDetail(player, lineup.GetStarterPlayerIds().ToHashSet());
+    }
+
+    public async Task<PlayerDetailDto?> UpdatePlayerPositionAsync(
+        Guid gameId,
+        Guid playerId,
+        UpdatePlayerPositionRequestDto request,
+        CancellationToken cancellationToken = default)
+    {
+        var gameSave = await LoadGameSaveAsync(gameId, cancellationToken);
+        if (gameSave?.SelectedClub is null)
+        {
+            return null;
+        }
+
+        var player = gameSave.SelectedClub.Players.SingleOrDefault(candidate => candidate.Id == playerId);
+        if (player is null)
+        {
+            return null;
+        }
+
+        var nextPosition = ParsePosition(request.Position);
+        var currentPosition = player.Position;
+        FootballManager.Domain.Entities.Lineup lineup;
+
+        if (currentPosition != nextPosition)
+        {
+            player.ChangePosition(nextPosition);
+
+            try
+            {
+                lineup = await LineupPlanner.EnsureLineupAsync(dbContext, gameSave, cancellationToken);
+            }
+            catch
+            {
+                player.ChangePosition(currentPosition);
+                throw;
+            }
+
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        else
+        {
+            lineup = await LineupPlanner.EnsureLineupAsync(dbContext, gameSave, cancellationToken);
+        }
+
+        return SquadViewFactory.BuildPlayerDetail(player, lineup.GetStarterPlayerIds().ToHashSet());
     }
 
     public async Task<LineupEditorDto?> GetLineupAsync(Guid gameId, CancellationToken cancellationToken = default)
@@ -105,5 +152,16 @@ public sealed class SquadManagementService(FootballManagerDbContext dbContext) :
             .Include(save => save.Lineup)
                 .ThenInclude(lineup => lineup!.Formation)
             .SingleOrDefaultAsync(save => save.Id == gameId, cancellationToken);
+    }
+
+    private static PlayerPosition ParsePosition(string position)
+    {
+        if (Enum.TryParse<PlayerPosition>(position, ignoreCase: true, out var parsedPosition) &&
+            Enum.IsDefined(parsedPosition))
+        {
+            return parsedPosition;
+        }
+
+        throw new InvalidOperationException("Position must be one of: Goalkeeper, Defender, Midfielder, Forward.");
     }
 }

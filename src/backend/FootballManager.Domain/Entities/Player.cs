@@ -139,6 +139,11 @@ public sealed class Player
         Age = Guard.AgainstOutOfRange(age, 15, 39, nameof(age));
     }
 
+    public void ChangePosition(PlayerPosition position)
+    {
+        Position = position;
+    }
+
     public void AssignCaptaincy()
     {
         IsCaptain = true;

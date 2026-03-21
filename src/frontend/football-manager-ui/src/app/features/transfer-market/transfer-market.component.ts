@@ -4,6 +4,7 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
+import { appPaths, resolveGameId } from '../../core/routing/app-paths';
 import { ActiveGameService } from '../../core/services/active-game.service';
 import { BootstrapApiService } from '../../core/services/bootstrap-api.service';
 import { ClubDashboard } from '../../models/club-dashboard';
@@ -28,8 +29,8 @@ export class TransferMarketComponent implements OnInit {
   readonly actionPlayerId = signal<string | null>(null);
   readonly errorMessage = signal<string | null>(null);
   readonly actionMessage = signal<string | null>(null);
-  readonly matchCenterLink = computed(() => this.gameId() ? `/match-center/${this.gameId()}` : '/');
-  readonly squadLink = computed(() => this.gameId() ? `/squad/${this.gameId()}` : '/');
+  readonly matchCenterLink = computed(() => this.gameId() ? appPaths.matchCenter : '/');
+  readonly squadLink = computed(() => this.gameId() ? appPaths.squad : '/');
   readonly featuredTarget = computed<TransferMarketPlayer | null>(() => {
     const market = this.market();
 
@@ -41,7 +42,7 @@ export class TransferMarketComponent implements OnInit {
     this.market()?.targets.filter((target) => target.isAffordable).length ?? 0);
 
   ngOnInit(): void {
-    const gameId = this.route.snapshot.paramMap.get('gameId');
+    const gameId = resolveGameId(this.activeGameService, this.route);
 
     if (!gameId) {
       this.errorMessage.set('Missing game identifier. Open a save before entering the market.');

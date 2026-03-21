@@ -286,7 +286,8 @@ public sealed class DatabaseInitializer(FootballManagerDbContext dbContext, ILog
             .Where(player => player.Club != null &&
                              player.Club.Name == "Arsenal" &&
                              ((player.FirstName == "Julian" && player.LastName == "Reed") ||
-                              (player.FirstName == "Isaac" && player.LastName == "Pereira")))
+                              (player.FirstName == "Isaac" && player.LastName == "Pereira") ||
+                              (player.FirstName == "Victor" && player.LastName == "Foster")))
             .ToListAsync(cancellationToken);
         var arsenalSeniorPlayers = await dbContext.Players
             .Include(player => player.Club)
@@ -306,6 +307,12 @@ public sealed class DatabaseInitializer(FootballManagerDbContext dbContext, ILog
             if (player.FirstName == "Julian" && player.LastName == "Reed")
             {
                 player.Rename("David", "Seaman");
+                continue;
+            }
+
+            if (player.FirstName == "Victor" && player.LastName == "Foster")
+            {
+                player.Rename("Patrick", "Vieira");
                 continue;
             }
 

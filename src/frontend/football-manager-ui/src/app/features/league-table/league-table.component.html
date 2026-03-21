@@ -51,7 +51,7 @@
             @for (entry of pressureRows(); track entry.clubId) {
               <article [class.pressure-entry-active]="entry.clubName === data.clubName">
                 <span class="position-pill">{{ entry.position }}</span>
-                <div>
+                <div class="pressure-entry-copy">
                   <strong>{{ entry.clubName }}</strong>
                   <span>{{ entry.points }} pts | GD {{ entry.goalDifference }}</span>
                 </div>

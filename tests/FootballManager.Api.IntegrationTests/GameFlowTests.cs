@@ -112,6 +112,110 @@ public sealed class GameFlowTests
         Assert.NotNull(refreshedDashboard);
         Assert.Equal("4-4-2", refreshedDashboard.Lineup.FormationName);
         Assert.Equal(11, refreshedDashboard.Lineup.StarterCount);
+
+        var reopenedLineup = await client.GetFromJsonAsync<LineupEditorDto>(
+            $"/api/lineup?gameId={createdGame.GameId}");
+
+        Assert.NotNull(reopenedLineup);
+        Assert.Equal("4-4-2", reopenedLineup.Lineup.FormationName);
+        Assert.Equal(fourFourTwo.Id, reopenedLineup.Lineup.FormationId);
+    }
+
+    [Fact]
+    public async Task PlayerEndpoint_UpdatesPlayerPositionAndKeepsLineupAvailable()
+    {
+        await using var factory = new FootballManagerApiFactory();
+        using var client = factory.CreateClient();
+
+        var createdGame = await CreateArsenalGameAsync(client);
+        var initialSquad = await client.GetFromJsonAsync<List<SquadPlayerDto>>(
+            $"/api/squad?gameId={createdGame.GameId}");
+
+        Assert.NotNull(initialSquad);
+        var player = Assert.IsType<SquadPlayerDto>(initialSquad.FirstOrDefault(candidate => candidate.Position == "Forward"));
+        var initialDefenderCount = initialSquad.Count(candidate => candidate.Position == "Defender");
+        var initialForwardCount = initialSquad.Count(candidate => candidate.Position == "Forward");
+
+        var updateResponse = await client.PutAsJsonAsync(
+            $"/api/player/{player.Id}/position?gameId={createdGame.GameId}",
+            new UpdatePlayerPositionRequestDto("Defender"));
+        updateResponse.EnsureSuccessStatusCode();
+
+        var updatedPlayer = await updateResponse.Content.ReadFromJsonAsync<PlayerDetailDto>();
+        Assert.NotNull(updatedPlayer);
+        Assert.Equal(player.Id, updatedPlayer.Id);
+        Assert.Equal("Defender", updatedPlayer.Position);
+
+        var refreshedSquad = await client.GetFromJsonAsync<List<SquadPlayerDto>>(
+            $"/api/squad?gameId={createdGame.GameId}");
+        var refreshedLineup = await client.GetFromJsonAsync<LineupEditorDto>(
+            $"/api/lineup?gameId={createdGame.GameId}");
+
+        Assert.NotNull(refreshedSquad);
+        Assert.Equal(initialDefenderCount + 1, refreshedSquad.Count(candidate => candidate.Position == "Defender"));
+        Assert.Equal(initialForwardCount - 1, refreshedSquad.Count(candidate => candidate.Position == "Forward"));
+        Assert.Contains(refreshedSquad, candidate => candidate.Id == player.Id && candidate.Position == "Defender");
+
+        Assert.NotNull(refreshedLineup);
+        Assert.Equal(11, refreshedLineup.Lineup.StarterCount);
+    }
+
+    [Fact]
+    public async Task PlayerPositionChange_AllowsSavingLineupWithThePlayerInTheNewRole()
+    {
+        await using var factory = new FootballManagerApiFactory();
+        using var client = factory.CreateClient();
+
+        var createdGame = await CreateArsenalGameAsync(client);
+        var initialSquad = await client.GetFromJsonAsync<List<SquadPlayerDto>>(
+            $"/api/squad?gameId={createdGame.GameId}");
+
+        Assert.NotNull(initialSquad);
+        var candidate = Assert.IsType<SquadPlayerDto>(
+            initialSquad.FirstOrDefault(player => player.Position == "Forward" && !player.IsStarter));
+
+        var positionChangeResponse = await client.PutAsJsonAsync(
+            $"/api/player/{candidate.Id}/position?gameId={createdGame.GameId}",
+            new UpdatePlayerPositionRequestDto("Defender"));
+        positionChangeResponse.EnsureSuccessStatusCode();
+
+        var updatedPlayer = await positionChangeResponse.Content.ReadFromJsonAsync<PlayerDetailDto>();
+        Assert.NotNull(updatedPlayer);
+        Assert.Equal("Defender", updatedPlayer.Position);
+
+        var lineupEditor = await client.GetFromJsonAsync<LineupEditorDto>(
+            $"/api/lineup?gameId={createdGame.GameId}");
+
+        Assert.NotNull(lineupEditor);
+        var formation = lineupEditor.Formations.Single(current => current.Id == lineupEditor.Lineup.FormationId);
+        var lineupPlayers = lineupEditor.Players.ToList();
+        var starterIds = lineupPlayers
+            .Where(player => player.Position == "Goalkeeper")
+            .Take(1)
+            .Concat(lineupPlayers.Where(player => player.Position == "Defender" && player.Id == candidate.Id))
+            .Concat(lineupPlayers.Where(player => player.Position == "Defender" && player.Id != candidate.Id).Take(formation.Defenders - 1))
+            .Concat(lineupPlayers.Where(player => player.Position == "Midfielder").Take(formation.Midfielders))
+            .Concat(lineupPlayers.Where(player => player.Position == "Forward").Take(formation.Forwards))
+            .Select(player => player.Id)
+            .ToArray();
+
+        Assert.Equal(formation.Defenders, lineupPlayers.Count(player => starterIds.Contains(player.Id) && player.Position == "Defender"));
+        Assert.Contains(candidate.Id, starterIds);
+
+        var saveResponse = await client.PostAsJsonAsync(
+            $"/api/lineup?gameId={createdGame.GameId}",
+            new UpdateLineupRequestDto(lineupEditor.Lineup.FormationId, starterIds));
+        saveResponse.EnsureSuccessStatusCode();
+
+        var savedLineup = await saveResponse.Content.ReadFromJsonAsync<LineupDto>();
+        var refreshedSquad = await client.GetFromJsonAsync<List<SquadPlayerDto>>(
+            $"/api/squad?gameId={createdGame.GameId}");
+
+        Assert.NotNull(savedLineup);
+        Assert.Equal(11, savedLineup.StarterCount);
+        Assert.Contains(savedLineup.StarterPlayerIds, playerId => playerId == candidate.Id);
+        Assert.NotNull(refreshedSquad);
+        Assert.Contains(refreshedSquad, player => player.Id == candidate.Id && player.Position == "Defender" && player.IsStarter);
     }
 
     [Fact]
@@ -434,9 +538,11 @@ public sealed class GameFlowTests
         Assert.Equal(5, initialAcademy.Players.Count);
         Assert.NotNull(initialAcademy.SpotlightPlayer);
         Assert.Contains(initialAcademy.Players, player => player.Name == "David Seaman");
+        Assert.Contains(initialAcademy.Players, player => player.Name == "Patrick Vieira");
         Assert.Contains(initialAcademy.Players, player => player.Name == "Thierry Henry");
         Assert.DoesNotContain(initialAcademy.Players, player => player.Name == "Julian Reed");
         Assert.DoesNotContain(initialAcademy.Players, player => player.Name == "Isaac Pereira");
+        Assert.DoesNotContain(initialAcademy.Players, player => player.Name == "Victor Foster");
 
         var trackedProspect = initialAcademy.Players.First();
         var initialDevelopment = trackedProspect.DevelopmentProgress;

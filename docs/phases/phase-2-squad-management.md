@@ -45,6 +45,10 @@ GET /api/player/{id}
 
 Return player details.
 
+PUT /api/player/{id}/position
+
+Update player position.
+
 POST /api/lineup
 
 Update starting lineup.
@@ -63,6 +67,7 @@ Features:
 
 - view squad
 - view player details
+- change player position
 - select starting lineup
 - save lineup
 - see player age and jersey number as part of the squad identity
@@ -77,7 +82,8 @@ Extend the home page into a club command center with a stronger squad-management
 
 Layout changes:
 
-- add `Squad` to the top menu when a game is active
+- add `Club Menu` to the top menu when a game is active
+- inside `Club Menu`, include `Club Dashboard`, `Squad`, `Line Up`, and `Academy`
 - add a squad summary card showing squad size, average rating, and lineup readiness
 - add a featured player or lineup spotlight area
 - add a quick action linking to the lineup editor
@@ -106,4 +112,5 @@ Player can:
 
 - view squad
 - inspect players
+- change player positions
 - set starting lineup

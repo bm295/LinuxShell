@@ -48,7 +48,7 @@ Extend the home page with long-term club building through youth development.
 
 Layout changes:
 
-- add `Academy` to the top menu
+- add `Academy` inside `Club Menu` in the top menu
 - add an academy spotlight card for the top youth prospect or most promotion-ready player
 - add a youth development summary showing academy depth and current promotion pressure
 - add a quick link to the academy page

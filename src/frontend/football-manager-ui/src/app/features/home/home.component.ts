@@ -4,6 +4,7 @@ import { Component, computed, effect, inject, OnDestroy, OnInit, signal } from '
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
+import { appPaths, buildPlayerPath } from '../../core/routing/app-paths';
 import { ActiveGameService } from '../../core/services/active-game.service';
 import { BootstrapApiService } from '../../core/services/bootstrap-api.service';
 import { GameMenuService } from '../../core/services/game-menu.service';
@@ -52,44 +53,43 @@ export class HomeComponent implements OnInit, OnDestroy {
   readonly activeGame = this.activeGameService.activeGame;
   readonly dashboardLink = computed(() => {
     const activeGame = this.activeGame();
-    return activeGame ? `/dashboard/${activeGame.gameId}` : '/new-game';
+    return activeGame ? appPaths.dashboard : appPaths.newGame;
   });
   readonly academyLink = computed(() => {
     const activeGame = this.activeGame();
-    return activeGame ? `/academy/${activeGame.gameId}` : '/new-game';
+    return activeGame ? appPaths.academy : appPaths.newGame;
   });
   readonly matchCenterLink = computed(() => {
     const activeGame = this.activeGame();
-    return activeGame ? `/match-center/${activeGame.gameId}` : '/new-game';
+    return activeGame ? appPaths.matchCenter : appPaths.newGame;
   });
   readonly transferMarketLink = computed(() => {
     const activeGame = this.activeGame();
-    return activeGame ? `/transfer-market/${activeGame.gameId}` : '/new-game';
+    return activeGame ? appPaths.transferMarket : appPaths.newGame;
   });
   readonly financesLink = computed(() => {
     const activeGame = this.activeGame();
-    return activeGame ? `/finances/${activeGame.gameId}` : '/new-game';
+    return activeGame ? appPaths.finances : appPaths.newGame;
   });
   readonly leagueTableLink = computed(() => {
     const activeGame = this.activeGame();
-    return activeGame ? `/league-table/${activeGame.gameId}` : '/new-game';
+    return activeGame ? appPaths.leagueTable : appPaths.newGame;
   });
   readonly fixturesLink = computed(() => {
     const activeGame = this.activeGame();
-    return activeGame ? `/fixtures/${activeGame.gameId}` : '/new-game';
+    return activeGame ? appPaths.fixtures : appPaths.newGame;
   });
   readonly squadLink = computed(() => {
     const activeGame = this.activeGame();
-    return activeGame ? `/squad/${activeGame.gameId}` : '/new-game';
+    return activeGame ? appPaths.squad : appPaths.newGame;
   });
   readonly lineupLink = computed(() => {
     const activeGame = this.activeGame();
-    return activeGame ? `/lineup/${activeGame.gameId}` : '/new-game';
+    return activeGame ? appPaths.lineup : appPaths.newGame;
   });
   readonly featuredPlayerLink = computed(() => {
-    const activeGame = this.activeGame();
-    const featuredPlayerId = this.activeDashboard()?.featuredPlayer.id;
-    return activeGame && featuredPlayerId ? `/player/${activeGame.gameId}/${featuredPlayerId}` : '/new-game';
+    const featuredPlayer = this.activeDashboard()?.featuredPlayer;
+    return this.activeGame() && featuredPlayer ? buildPlayerPath(featuredPlayer) : appPaths.newGame;
   });
   readonly nextFixtureLabel = computed(() => {
     const fixture = this.activeDashboard()?.nextFixture;
@@ -333,7 +333,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     const activeGame = this.activeGame();
     const save = this.spotlightSave();
     return activeGame && save && activeGame.gameId === save.gameId
-      ? `/match-center/${activeGame.gameId}`
+      ? appPaths.matchCenter
       : null;
   });
 

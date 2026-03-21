@@ -2,6 +2,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
+import { appPaths, resolveGameId } from '../../core/routing/app-paths';
+import { ActiveGameService } from '../../core/services/active-game.service';
 import { BootstrapApiService } from '../../core/services/bootstrap-api.service';
 import { LineupEditor } from '../../models/lineup';
 import { SquadPlayer } from '../../models/squad';
@@ -19,6 +21,7 @@ const positionOrder: PositionKey[] = ['Goalkeeper', 'Defender', 'Midfielder', 'F
 })
 export class LineupEditorComponent implements OnInit {
   private readonly api = inject(BootstrapApiService);
+  private readonly activeGameService = inject(ActiveGameService);
   private readonly route = inject(ActivatedRoute);
 
   readonly positions = positionOrder;
@@ -31,18 +34,9 @@ export class LineupEditorComponent implements OnInit {
   readonly errorMessage = signal<string | null>(null);
   readonly feedbackMessage = signal<string | null>(null);
   readonly feedbackTone = signal<'idle' | 'success' | 'error'>('idle');
-  readonly squadLink = computed(() => {
-    const gameId = this.gameId();
-    return gameId ? `/squad/${gameId}` : '/';
-  });
-  readonly dashboardLink = computed(() => {
-    const gameId = this.gameId();
-    return gameId ? `/dashboard/${gameId}` : '/';
-  });
-  readonly matchCenterLink = computed(() => {
-    const gameId = this.gameId();
-    return gameId ? `/match-center/${gameId}` : '/';
-  });
+  readonly squadLink = computed(() => this.gameId() ? appPaths.squad : '/');
+  readonly dashboardLink = computed(() => this.gameId() ? appPaths.dashboard : '/');
+  readonly matchCenterLink = computed(() => this.gameId() ? appPaths.matchCenter : '/');
   readonly activeFormation = computed(() => {
     const data = this.editorData();
     const formationId = this.selectedFormationId();
@@ -59,7 +53,9 @@ export class LineupEditorComponent implements OnInit {
     };
   });
   readonly playerBuckets = computed<Record<PositionKey, SquadPlayer[]>>(() => {
-    const players = [...(this.editorData()?.players ?? [])].sort(this.comparePlayers);
+    const selectedIds = new Set(this.selectedPlayerIds());
+    const players = [...(this.editorData()?.players ?? [])].sort((left, right) =>
+      this.comparePlayers(left, right, selectedIds));
 
     return {
       Goalkeeper: players.filter((player) => this.toPositionKey(player.position) === 'Goalkeeper'),
@@ -89,7 +85,7 @@ export class LineupEditorComponent implements OnInit {
     const selectedIds = new Set(this.selectedPlayerIds());
     return (this.editorData()?.players ?? [])
       .filter((player) => selectedIds.has(player.id))
-      .sort(this.comparePlayers);
+      .sort((left, right) => this.comparePlayers(left, right, selectedIds));
   });
   readonly summary = computed(() => {
     const players = this.selectedPlayers();
@@ -111,7 +107,7 @@ export class LineupEditorComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    const gameId = this.route.snapshot.paramMap.get('gameId');
+    const gameId = resolveGameId(this.activeGameService, this.route);
 
     if (!gameId) {
       this.errorMessage.set('Missing game identifier. Start a new save before setting a lineup.');
@@ -143,19 +139,36 @@ export class LineupEditorComponent implements OnInit {
       return;
     }
 
-    if (this.isLocked(player)) {
-      return;
-    }
-
     const nextIds = new Set(this.selectedPlayerIds());
 
     if (nextIds.has(player.id)) {
       nextIds.delete(player.id);
-    } else {
-      nextIds.add(player.id);
+      this.applySelection(nextIds);
+      this.feedbackMessage.set(null);
+      this.feedbackTone.set('idle');
+      return;
     }
 
-    this.selectedPlayerIds.set(this.sortStarterIds([...nextIds]));
+    const position = this.toPositionKey(player.position);
+    if (this.selectionCounts()[position] >= this.requirements()[position]) {
+      const replacedPlayer = this.findReplaceablePlayer(position, nextIds);
+
+      if (!replacedPlayer) {
+        this.feedbackMessage.set(`No ${position.toLowerCase()} slot can be changed right now.`);
+        this.feedbackTone.set('error');
+        return;
+      }
+
+      nextIds.delete(replacedPlayer.id);
+      nextIds.add(player.id);
+      this.applySelection(nextIds);
+      this.feedbackMessage.set(`${player.name} replaces ${replacedPlayer.name} in the ${position.toLowerCase()} unit.`);
+      this.feedbackTone.set('success');
+      return;
+    }
+
+    nextIds.add(player.id);
+    this.applySelection(nextIds);
     this.feedbackMessage.set(null);
     this.feedbackTone.set('idle');
   }
@@ -169,8 +182,13 @@ export class LineupEditorComponent implements OnInit {
       return true;
     }
 
+    if (this.isSelected(player.id)) {
+      return false;
+    }
+
     const position = this.toPositionKey(player.position);
-    return !this.isSelected(player.id) && this.selectionCounts()[position] >= this.requirements()[position];
+    return this.selectionCounts()[position] >= this.requirements()[position] &&
+      this.findReplaceablePlayer(position) === null;
   }
 
   saveLineup(): void {
@@ -206,7 +224,8 @@ export class LineupEditorComponent implements OnInit {
             isStarter: starterIds.has(player.id)
           }))
         });
-        this.selectedPlayerIds.set([...lineup.starterPlayerIds]);
+        this.selectedPlayerIds.set(this.sortStarterIds([...lineup.starterPlayerIds]));
+        this.selectedFormationId.set(lineup.formationId);
         this.feedbackMessage.set(`${lineup.formationName} saved. ${lineup.readiness}.`);
         this.feedbackTone.set('success');
         this.isSaving.set(false);
@@ -227,7 +246,8 @@ export class LineupEditorComponent implements OnInit {
       next: (editor) => {
         this.editorData.set(editor);
         this.selectedFormationId.set(editor.lineup.formationId);
-        this.selectedPlayerIds.set([...editor.lineup.starterPlayerIds]);
+        this.applySelection(editor.lineup.starterPlayerIds);
+        this.rebalanceSelection();
         this.isLoading.set(false);
       },
       error: () => {
@@ -238,24 +258,24 @@ export class LineupEditorComponent implements OnInit {
   }
 
   private rebalanceSelection(): void {
-    const playersById = new Map((this.editorData()?.players ?? []).map((player) => [player.id, player]));
+    const currentSelectedIds = new Set(this.selectedPlayerIds());
     const nextIds: string[] = [];
 
     for (const position of this.positions) {
-      const keepers = this.selectedPlayerIds()
-        .map((playerId) => playersById.get(playerId))
-        .filter((player): player is SquadPlayer => !!player && this.toPositionKey(player.position) === position)
-        .sort(this.comparePlayers)
+      const starters = (this.editorData()?.players ?? [])
+        .filter((player) => !player.isInjured && this.toPositionKey(player.position) === position)
+        .sort((left, right) => this.comparePlayers(left, right, currentSelectedIds))
         .slice(0, this.requirements()[position]);
 
-      nextIds.push(...keepers.map((player) => player.id));
+      nextIds.push(...starters.map((player) => player.id));
     }
 
-    this.selectedPlayerIds.set(this.sortStarterIds(nextIds));
+    this.applySelection(nextIds);
   }
 
   private sortStarterIds(playerIds: string[]): string[] {
     const playersById = new Map((this.editorData()?.players ?? []).map((player) => [player.id, player]));
+    const selectedIds = new Set(playerIds);
 
     return [...playerIds].sort((leftId, rightId) => {
       const left = playersById.get(leftId);
@@ -266,16 +286,45 @@ export class LineupEditorComponent implements OnInit {
       }
 
       return positionOrder.indexOf(this.toPositionKey(left.position)) - positionOrder.indexOf(this.toPositionKey(right.position)) ||
-        this.comparePlayers(left, right);
+        this.comparePlayers(left, right, selectedIds);
     });
   }
 
-  private readonly comparePlayers = (left: SquadPlayer, right: SquadPlayer): number =>
-    Number(right.isStarter) - Number(left.isStarter) ||
+  private findReplaceablePlayer(position: PositionKey, selectedIds = new Set(this.selectedPlayerIds())): SquadPlayer | null {
+    const selectedPlayers = (this.editorData()?.players ?? [])
+      .filter((player) => selectedIds.has(player.id) && this.toPositionKey(player.position) === position)
+      .sort((left, right) => this.comparePlayers(left, right, selectedIds));
+
+    return selectedPlayers.at(-1) ?? null;
+  }
+
+  private applySelection(playerIds: Iterable<string>): void {
+    const nextIds = this.sortStarterIds([...new Set(playerIds)]);
+    const starterIds = new Set(nextIds);
+
+    this.selectedPlayerIds.set(nextIds);
+
+    const current = this.editorData();
+    if (!current) {
+      return;
+    }
+
+    this.editorData.set({
+      ...current,
+      players: current.players.map((player) => ({
+        ...player,
+        isStarter: starterIds.has(player.id)
+      }))
+    });
+  }
+
+  private comparePlayers(left: SquadPlayer, right: SquadPlayer, selectedIds = new Set(this.selectedPlayerIds())): number {
+    return Number(selectedIds.has(right.id)) - Number(selectedIds.has(left.id)) ||
     Number(left.isInjured) - Number(right.isInjured) ||
     right.overallRating - left.overallRating ||
     right.fitness - left.fitness ||
     left.squadNumber - right.squadNumber;
+  }
 
   private toPositionKey(position: string): PositionKey {
     return positionOrder.includes(position as PositionKey)

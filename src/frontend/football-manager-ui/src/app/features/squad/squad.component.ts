@@ -3,6 +3,7 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
+import { appPaths, buildPlayerPath, resolveGameId } from '../../core/routing/app-paths';
 import { ActiveGameService } from '../../core/services/active-game.service';
 import { BootstrapApiService } from '../../core/services/bootstrap-api.service';
 import { ClubDashboard } from '../../models/club-dashboard';
@@ -28,17 +29,11 @@ export class SquadComponent implements OnInit {
   readonly starterCount = computed(() => this.players().filter((player) => player.isStarter).length);
   readonly unavailableCount = computed(() => this.players().filter((player) => player.isInjured).length);
   readonly averageRating = computed(() => this.calculateAverage(this.players().map((player) => player.overallRating)));
-  readonly dashboardLink = computed(() => {
-    const gameId = this.gameId();
-    return gameId ? `/dashboard/${gameId}` : '/';
-  });
-  readonly lineupLink = computed(() => {
-    const gameId = this.gameId();
-    return gameId ? `/lineup/${gameId}` : '/';
-  });
+  readonly dashboardLink = computed(() => this.gameId() ? appPaths.dashboard : '/');
+  readonly lineupLink = computed(() => this.gameId() ? appPaths.lineup : '/');
 
   ngOnInit(): void {
-    const gameId = this.route.snapshot.paramMap.get('gameId');
+    const gameId = resolveGameId(this.activeGameService, this.route);
 
     if (!gameId) {
       this.errorMessage.set('Missing game identifier. Start a new game first.');
@@ -48,6 +43,10 @@ export class SquadComponent implements OnInit {
 
     this.gameId.set(gameId);
     this.loadSquad(gameId);
+  }
+
+  playerLink(player: SquadPlayer): string {
+    return buildPlayerPath(player);
   }
 
   private loadSquad(gameId: string): void {

@@ -3,6 +3,7 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
+import { appPaths, resolveGameId } from '../../core/routing/app-paths';
 import { ActiveGameService } from '../../core/services/active-game.service';
 import { BootstrapApiService } from '../../core/services/bootstrap-api.service';
 import { ClubDashboard } from '../../models/club-dashboard';
@@ -25,12 +26,12 @@ export class FinancesComponent implements OnInit {
   readonly finance = signal<FinanceSummary | null>(null);
   readonly isLoading = signal(true);
   readonly errorMessage = signal<string | null>(null);
-  readonly matchCenterLink = computed(() => this.gameId() ? `/match-center/${this.gameId()}` : '/');
-  readonly transferMarketLink = computed(() => this.gameId() ? `/transfer-market/${this.gameId()}` : '/');
+  readonly matchCenterLink = computed(() => this.gameId() ? appPaths.matchCenter : '/');
+  readonly transferMarketLink = computed(() => this.gameId() ? appPaths.transferMarket : '/');
   readonly latestEvent = computed(() => this.finance()?.recentEvents[0] ?? null);
 
   ngOnInit(): void {
-    const gameId = this.route.snapshot.paramMap.get('gameId');
+    const gameId = resolveGameId(this.activeGameService, this.route);
 
     if (!gameId) {
       this.errorMessage.set('Missing game identifier. Open a save before stepping into the boardroom.');

@@ -38,7 +38,7 @@ Finalize the home page as the long-term career hub for returning players.
 Layout changes:
 
 - keep the full navigation from earlier phases
-- add `Save Game` and `Load Game` actions in the header or hero area
+- expose `Save Game`, `Load Game`, and `New Game` through `Game Menu` in the header
 - open recent saves as a pop-up or modal only when `Load Game` is selected
 - inside the pop-up, show save name, club, season, and last updated time
 - allow each saved game to be loaded or deleted from the pop-up

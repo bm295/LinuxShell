@@ -49,11 +49,15 @@ The home page presentation after the new game flow is introduced must:
 The top menu must support the following navigation model:
 
 - Home
-- New Game
-- Load Game
-- Club Dashboard
-- Squad
-- Academy
+- Game Menu
+  - Save Game
+  - Load Game
+  - New Game
+- Club Menu
+  - Club Dashboard
+  - Squad
+  - Line Up
+  - Academy
 - Match Center
 - League Table
 - Fixtures
@@ -151,6 +155,7 @@ The user must be able to:
 
 - View all players in the club
 - Inspect player details
+- Change a player's position
 - Set starting lineup
 - Assign substitute players
 - Rest players

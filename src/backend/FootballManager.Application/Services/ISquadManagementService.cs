@@ -8,6 +8,12 @@ public interface ISquadManagementService
 
     Task<PlayerDetailDto?> GetPlayerAsync(Guid gameId, Guid playerId, CancellationToken cancellationToken = default);
 
+    Task<PlayerDetailDto?> UpdatePlayerPositionAsync(
+        Guid gameId,
+        Guid playerId,
+        UpdatePlayerPositionRequestDto request,
+        CancellationToken cancellationToken = default);
+
     Task<LineupEditorDto?> GetLineupAsync(Guid gameId, CancellationToken cancellationToken = default);
 
     Task<LineupDto?> UpdateLineupAsync(Guid gameId, UpdateLineupRequestDto request, CancellationToken cancellationToken = default);

@@ -3,6 +3,7 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
+import { appPaths, resolveGameId } from '../../core/routing/app-paths';
 import { ActiveGameService } from '../../core/services/active-game.service';
 import { BootstrapApiService } from '../../core/services/bootstrap-api.service';
 import { ClubDashboard } from '../../models/club-dashboard';
@@ -31,8 +32,8 @@ export class FixturesComponent implements OnInit {
   readonly fixtures = signal<FixtureSummary[]>([]);
   readonly isLoading = signal(true);
   readonly errorMessage = signal<string | null>(null);
-  readonly matchCenterLink = computed(() => this.gameId() ? `/match-center/${this.gameId()}` : '/');
-  readonly leagueTableLink = computed(() => this.gameId() ? `/league-table/${this.gameId()}` : '/');
+  readonly matchCenterLink = computed(() => this.gameId() ? appPaths.matchCenter : '/');
+  readonly leagueTableLink = computed(() => this.gameId() ? appPaths.leagueTable : '/');
   readonly playedCount = computed(() => this.fixtures().filter((fixture) => fixture.isPlayed).length);
   readonly remainingCount = computed(() => this.fixtures().filter((fixture) => !fixture.isPlayed).length);
   readonly currentRound = computed(() =>
@@ -56,7 +57,7 @@ export class FixturesComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    const gameId = this.route.snapshot.paramMap.get('gameId');
+    const gameId = resolveGameId(this.activeGameService, this.route);
 
     if (!gameId) {
       this.errorMessage.set('Missing game identifier. Open a save before viewing fixtures.');

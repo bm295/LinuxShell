@@ -13,7 +13,7 @@ import { HealthStatus } from '../../models/health-status';
 import { FixtureSummary, LeagueTableEntry } from '../../models/league';
 import { Lineup, LineupEditor, UpdateLineupRequest } from '../../models/lineup';
 import { SimulatedMatchResult } from '../../models/match-simulation';
-import { PlayerDetail, SquadPlayer } from '../../models/squad';
+import { PlayerDetail, SquadPlayer, UpdatePlayerPositionRequest } from '../../models/squad';
 import { TransferActionResult, TransferMarket } from '../../models/transfer-market';
 
 @Injectable({ providedIn: 'root' })
@@ -75,6 +75,12 @@ export class BootstrapApiService {
 
   getPlayer(gameId: string, playerId: string): Observable<PlayerDetail> {
     return this.http.get<PlayerDetail>(`/api/player/${encodeURIComponent(playerId)}?gameId=${encodeURIComponent(gameId)}`);
+  }
+
+  updatePlayerPosition(gameId: string, playerId: string, request: UpdatePlayerPositionRequest): Observable<PlayerDetail> {
+    return this.http.put<PlayerDetail>(
+      `/api/player/${encodeURIComponent(playerId)}/position?gameId=${encodeURIComponent(gameId)}`,
+      request);
   }
 
   getLineup(gameId: string): Observable<LineupEditor> {

@@ -2,6 +2,7 @@ import { CurrencyPipe } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
+import { appPaths } from '../../core/routing/app-paths';
 import { ActiveGameService } from '../../core/services/active-game.service';
 import { BootstrapApiService } from '../../core/services/bootstrap-api.service';
 import { ClubOption } from '../../models/club-option';
@@ -64,7 +65,7 @@ export class NewGameComponent implements OnInit {
     this.api.createNewGame(clubId).subscribe({
       next: (response) => {
         this.activeGameService.setFromCreate(response);
-        this.router.navigate(['/dashboard', response.gameId]);
+        void this.router.navigateByUrl(appPaths.dashboard);
       },
       error: () => {
         this.errorMessage.set('The game could not be created. Verify the backend is running and try again.');

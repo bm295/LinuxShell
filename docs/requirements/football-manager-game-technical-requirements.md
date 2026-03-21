@@ -129,6 +129,10 @@ Club
 - Update lineup
 - Update tactics
 
+Player
+- Get player detail
+- Update player position
+
 Match
 - Get fixtures
 - Simulate match

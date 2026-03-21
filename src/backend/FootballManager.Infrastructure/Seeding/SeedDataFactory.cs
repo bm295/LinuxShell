@@ -333,6 +333,11 @@ public static class SeedDataFactory
             return ("Thierry", "Henry");
         }
 
+        if (clubName == "Arsenal" && academyIndex == 3)
+        {
+            return ("Patrick", "Vieira");
+        }
+
         if (clubName == "Arsenal" && academyIndex == 4)
         {
             return ("David", "Seaman");

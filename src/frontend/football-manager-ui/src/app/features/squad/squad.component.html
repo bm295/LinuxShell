@@ -87,7 +87,7 @@
 
         <div class="player-grid">
           @for (player of players(); track player.id) {
-            <a class="player-card" [routerLink]="['/player', gameId(), player.id]">
+            <a class="player-card" [routerLink]="playerLink(player)">
               <div class="player-topline">
                 <div class="player-meta">
                   <span class="shirt-number">#{{ player.squadNumber }}</span>

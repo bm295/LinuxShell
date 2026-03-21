@@ -95,12 +95,19 @@
 
 .table-grid {
   grid-template-columns: 0.95fr 1.35fr;
+  align-items: start;
 }
 
 .pressure-panel,
 .standings-panel {
   display: grid;
   gap: 1rem;
+}
+
+.standings-panel {
+  grid-template-rows: auto minmax(0, 1fr);
+  max-height: 46rem;
+  min-height: 0;
 }
 
 .pressure-list article {
@@ -111,6 +118,17 @@
   padding: 1rem;
   border-radius: 1.1rem;
   background: rgba(255, 252, 247, 0.78);
+}
+
+.pressure-entry-copy {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.pressure-entry-copy strong,
+.pressure-entry-copy span {
+  display: block;
 }
 
 .pressure-entry-active {
@@ -134,6 +152,9 @@
 .standings-table {
   display: grid;
   gap: 0.65rem;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 0.35rem;
 }
 
 .standings-row {

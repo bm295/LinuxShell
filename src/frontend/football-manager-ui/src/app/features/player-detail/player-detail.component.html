@@ -30,8 +30,63 @@
       </section>
 
       <section class="action-row">
-        <a [routerLink]="squadLink()" class="ghost-link">Back to Squad</a>
-        <a [routerLink]="lineupLink()" class="primary-link">Edit Lineup</a>
+        <a
+          [routerLink]="squadLink()"
+          class="ghost-link"
+          [class.action-link-disabled]="isUpdatingPosition()"
+          [attr.aria-disabled]="isUpdatingPosition() ? 'true' : null"
+          (click)="preventNavigationWhileUpdating($event)">
+          Back to Squad
+        </a>
+        <a
+          [routerLink]="lineupLink()"
+          class="primary-link"
+          [class.action-link-disabled]="isUpdatingPosition()"
+          [attr.aria-disabled]="isUpdatingPosition() ? 'true' : null"
+          (click)="preventNavigationWhileUpdating($event)">
+          Edit Lineup
+        </a>
+      </section>
+
+      <section class="panel position-panel">
+        <div class="position-copy">
+          <p class="label">Role Assignment</p>
+          <h2>Change position</h2>
+          <p class="supporting-copy">
+            Recast the player’s role, then let the staff rebalance the matchday group around the new assignment.
+          </p>
+        </div>
+
+        <div class="position-controls">
+          <label class="field-label" for="position-select">Position</label>
+          <select
+            id="position-select"
+            class="position-select"
+            [value]="selectedPosition()"
+            [disabled]="isUpdatingPosition()"
+            (change)="onPositionChange($event)">
+            @for (position of availablePositions; track position) {
+              <option [value]="position">{{ position }}</option>
+            }
+          </select>
+
+          <button
+            type="button"
+            class="primary-button"
+            [disabled]="!canUpdatePosition()"
+            (click)="updatePosition()">
+            {{ isUpdatingPosition() ? 'Updating...' : 'Update Position' }}
+          </button>
+        </div>
+
+        @if (positionFeedbackMessage()) {
+          <p
+            class="position-feedback"
+            [class.feedback-success]="positionFeedbackTone() === 'success'"
+            [class.feedback-error]="positionFeedbackTone() === 'error'">
+            {{ positionFeedbackMessage() }}
+          </p>
+        }
       </section>
 
       <section class="panel metrics-panel">

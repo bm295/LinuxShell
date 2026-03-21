@@ -3,6 +3,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 
+import { appPaths, resolveGameId } from '../../core/routing/app-paths';
 import { ActiveGameService } from '../../core/services/active-game.service';
 import { BootstrapApiService } from '../../core/services/bootstrap-api.service';
 import { AcademyPlayer, AcademySummary } from '../../models/academy';
@@ -27,13 +28,13 @@ export class AcademyComponent implements OnInit {
   readonly actionPlayerId = signal<string | null>(null);
   readonly errorMessage = signal<string | null>(null);
   readonly actionMessage = signal<string | null>(null);
-  readonly matchCenterLink = computed(() => this.gameId() ? `/match-center/${this.gameId()}` : '/');
-  readonly squadLink = computed(() => this.gameId() ? `/squad/${this.gameId()}` : '/');
+  readonly matchCenterLink = computed(() => this.gameId() ? appPaths.matchCenter : '/');
+  readonly squadLink = computed(() => this.gameId() ? appPaths.squad : '/');
   readonly topProspect = computed<AcademyPlayer | null>(() =>
     this.academy()?.spotlightPlayer ?? this.academy()?.players[0] ?? null);
 
   ngOnInit(): void {
-    const gameId = this.route.snapshot.paramMap.get('gameId');
+    const gameId = resolveGameId(this.activeGameService, this.route);
 
     if (!gameId) {
       this.errorMessage.set('Missing game identifier. Open a save before stepping into the academy.');
