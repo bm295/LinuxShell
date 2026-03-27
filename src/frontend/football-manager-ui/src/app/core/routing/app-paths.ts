@@ -12,6 +12,7 @@ export const appPaths = {
   matchCenter: '/match-center',
   leagueTable: '/league-table',
   fixtures: '/fixtures',
+  topPlayers: '/top-players',
   transferMarket: '/transfer-market',
   finances: '/finances'
 } as const;

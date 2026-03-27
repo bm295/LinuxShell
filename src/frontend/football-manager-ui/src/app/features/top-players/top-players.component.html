@@ -1,0 +1,87 @@
+<section class="top-players-shell">
+  @if (isLoading()) {
+    <div class="panel top-players-panel">
+      <p class="feedback">Loading top players...</p>
+    </div>
+  } @else if (errorMessage()) {
+    <div class="panel top-players-panel">
+      <p class="feedback feedback-error">{{ errorMessage() }}</p>
+    </div>
+  } @else {
+    @if (dashboard(); as data) {
+      <section class="panel top-players-hero">
+        <div>
+          <p class="label">Top Players</p>
+          <h1>{{ data.competitionName }}</h1>
+          <p class="supporting-copy">The season MVP race shows who keeps deciding matchdays when the pressure peaks.</p>
+        </div>
+
+        <div class="hero-actions">
+          <a [routerLink]="matchCenterLink()" class="ghost-link">Match Center</a>
+          <a [routerLink]="leagueTableLink()" class="ghost-link">League Table</a>
+          <a [routerLink]="fixturesLink()" class="ghost-link">Fixtures</a>
+        </div>
+      </section>
+
+      @if (leader(); as leaderRow) {
+        <section class="summary-grid">
+          <article class="panel summary-card">
+            <span class="summary-label">Current Leader</span>
+            <strong>{{ leaderRow.playerName }}</strong>
+            <span>{{ leaderRow.clubName }}</span>
+          </article>
+          <article class="panel summary-card">
+            <span class="summary-label">MVP Awards</span>
+            <strong>{{ leaderRow.mvpAwards }}</strong>
+            <span>#{{ leaderRow.squadNumber }} | {{ leaderRow.position }}</span>
+          </article>
+          <article class="panel summary-card">
+            <span class="summary-label">{{ data.clubName }}</span>
+            <strong>{{ managedClubEntries().length }}</strong>
+            <span>Players in the top 10</span>
+          </article>
+        </section>
+
+        <section class="panel leaderboard-panel">
+          <div class="leaderboard-head">
+            <div>
+              <p class="label">Season MVP Board</p>
+              <h2>Top 10 Players</h2>
+            </div>
+
+            <span class="board-total">{{ totalAwardsOnBoard() }} MVP awards on this board</span>
+          </div>
+
+          <div class="leaderboard-list">
+            @for (player of leaderboard(); track player.playerId) {
+              <article class="player-row" [class.player-row-managed]="player.clubName === data.clubName">
+                <span class="rank-pill">{{ player.rank }}</span>
+
+                <div class="player-main">
+                  <strong>{{ player.playerName }}</strong>
+                  <span>{{ player.clubName }}</span>
+                </div>
+
+                <div class="player-meta">
+                  <span>#{{ player.squadNumber }} | {{ player.position }}</span>
+                  <span>OVR {{ player.overallRating }}</span>
+                </div>
+
+                <div class="player-awards">
+                  <span class="summary-label">MVP Awards</span>
+                  <strong>{{ player.mvpAwards }}</strong>
+                </div>
+              </article>
+            }
+          </div>
+        </section>
+      } @else {
+        <section class="panel empty-state">
+          <p class="label">Season MVP Board</p>
+          <h2>No MVP awards yet</h2>
+          <p>Simulate the first matchweek to start the leaderboard for this season.</p>
+        </section>
+      }
+    }
+  }
+</section>

@@ -5,6 +5,7 @@ public sealed record SimulatedMatchResultDto(
     string AwayTeam,
     MatchScoreDto Score,
     IReadOnlyCollection<MatchEventDto> MatchEvents,
+    MatchMvpDto MatchMvp,
     IReadOnlyCollection<PlayerDevelopmentChangeDto> SeniorPlayerDevelopment,
     IReadOnlyCollection<AcademyDevelopmentChangeDto> AcademyDevelopment,
     LeagueTableEntryDto ClubStanding,

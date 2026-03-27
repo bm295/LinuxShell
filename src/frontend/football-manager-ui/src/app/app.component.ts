@@ -53,7 +53,8 @@ export class AppComponent {
       ? [
           { label: 'Match Center', path: appPaths.matchCenter },
           { label: 'League Table', path: appPaths.leagueTable },
-          { label: 'Fixtures', path: appPaths.fixtures }
+          { label: 'Fixtures', path: appPaths.fixtures },
+          { label: 'Top Players', path: appPaths.topPlayers }
         ]
       : [];
   });

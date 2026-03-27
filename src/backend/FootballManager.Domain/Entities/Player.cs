@@ -156,18 +156,28 @@ public sealed class Player
 
     public void ApplyAgeBasedMatchDevelopment(bool playedMatch)
     {
-        AttributeProgress += ResolveAgeBasedProgressShift(playedMatch);
+        var overallBefore = GetOverallRating();
+        var progressShift = ResolveAgeBasedProgressShift(playedMatch);
+        var improvedCoreAttribute = false;
+
+        AttributeProgress += progressShift;
 
         while (AttributeProgress >= 3)
         {
             ImproveCoreAttribute();
             AttributeProgress -= 3;
+            improvedCoreAttribute = true;
         }
 
         while (AttributeProgress <= -3)
         {
             ReduceCoreAttribute();
             AttributeProgress += 3;
+        }
+
+        if (playedMatch && progressShift > 0 && improvedCoreAttribute)
+        {
+            ApplyVisibleOverallBoost(overallBefore);
         }
     }
 
@@ -194,8 +204,9 @@ public sealed class Player
     private int ResolveAgeBasedProgressShift(bool playedMatch) =>
         Age switch
         {
-            <= 20 => playedMatch ? 2 : 1,
-            <= 24 => playedMatch ? 1 : 0,
+            <= 18 => playedMatch ? 5 : 2,
+            <= 21 => playedMatch ? 4 : 1,
+            <= 24 => playedMatch ? 2 : 0,
             <= 29 => 0,
             <= 32 => playedMatch ? -1 : 0,
             _ => playedMatch ? -2 : -1
@@ -228,5 +239,81 @@ public sealed class Player
                 Passing = Math.Clamp(Passing + delta, 1, 100);
                 break;
         }
+    }
+
+    private void ApplyVisibleOverallBoost(int overallBefore)
+    {
+        var bonusGrowthSteps = ResolveVisibleGrowthBoostSteps();
+
+        if (bonusGrowthSteps == 0 || GetOverallRating() > overallBefore)
+        {
+            return;
+        }
+
+        for (var step = 0; step < bonusGrowthSteps && GetOverallRating() <= overallBefore; step++)
+        {
+            ApplyGrowth(ResolveBestGrowthAttribute(), 1);
+        }
+    }
+
+    private int ResolveVisibleGrowthBoostSteps() =>
+        Age switch
+        {
+            <= 21 => 2,
+            <= 24 => 1,
+            _ => 0
+        };
+
+    private CoreAttribute ResolveBestGrowthAttribute()
+    {
+        foreach (var attribute in ResolveGrowthPriority())
+        {
+            if (GetAttributeValue(attribute) < 100)
+            {
+                return attribute;
+            }
+        }
+
+        return ResolveGrowthPriority()[0];
+    }
+
+    private IReadOnlyList<CoreAttribute> ResolveGrowthPriority() =>
+        Position switch
+        {
+            PlayerPosition.Goalkeeper => [CoreAttribute.Defense, CoreAttribute.Passing, CoreAttribute.Attack],
+            PlayerPosition.Defender => [CoreAttribute.Defense, CoreAttribute.Passing, CoreAttribute.Attack],
+            PlayerPosition.Midfielder => [CoreAttribute.Passing, CoreAttribute.Attack, CoreAttribute.Defense],
+            _ => [CoreAttribute.Attack, CoreAttribute.Passing, CoreAttribute.Defense]
+        };
+
+    private int GetAttributeValue(CoreAttribute attribute) =>
+        attribute switch
+        {
+            CoreAttribute.Attack => Attack,
+            CoreAttribute.Defense => Defense,
+            _ => Passing
+        };
+
+    private void ApplyGrowth(CoreAttribute attribute, int delta)
+    {
+        switch (attribute)
+        {
+            case CoreAttribute.Attack:
+                Attack = Math.Clamp(Attack + delta, 1, 100);
+                break;
+            case CoreAttribute.Defense:
+                Defense = Math.Clamp(Defense + delta, 1, 100);
+                break;
+            default:
+                Passing = Math.Clamp(Passing + delta, 1, 100);
+                break;
+        }
+    }
+
+    private enum CoreAttribute
+    {
+        Attack,
+        Defense,
+        Passing
     }
 }

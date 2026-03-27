@@ -58,9 +58,11 @@ The top menu must support the following navigation model:
   - Squad
   - Line Up
   - Academy
-- Match Center
-- League Table
-- Fixtures
+- League Menu
+  - Match Center
+  - League Table
+  - Fixtures
+  - Top Players
 - Transfer Market
 - Finances
 
@@ -106,7 +108,7 @@ The gameplay loop must follow these steps:
 2. Player sets lineup and tactics
 3. Player reviews transfers, finances, and promotion options
 4. Player simulates the next match
-5. System updates match results and league standings
+5. System updates match results, league standings, and season MVP records
 6. System updates player conditions, academy training progress, and club finances
 7. Player continues to next match
 8. Season continues until all fixtures are completed
@@ -216,6 +218,7 @@ Match simulation should produce:
 - Final score
 - Basic match events
 - Simple match statistics
+- Match MVP
 
 Simulation must consider:
 
@@ -235,11 +238,15 @@ After simulation, the system must update:
 - Injury status
 - Club finances
 - Academy training progress
+- Current-season MVP award totals for the selected match MVP
+
+The system must determine exactly one MVP for each completed match and show that player in the post-match result flow.
 
 After each match simulation, the system must open a post-match pop-up or modal with exactly 3 tabs:
 
 - Match Review tab:
   - show a banner-style summary panel at the top with the fixture and result
+  - show the MVP of the match in the summary area
   - list match events below the banner
 - Player Development tab:
   - show each senior squad player's stat changes after the match
@@ -270,6 +277,14 @@ League standings must track:
 - Goals conceded
 - Goal difference
 - Points
+
+The league area must also include a `Top Players` view under `League Menu`.
+
+The `Top Players` view must:
+
+- show the top 10 players in the current season
+- order players by number of MVP awards in descending order
+- display each player's name, club, and season MVP total
 
 ---
 

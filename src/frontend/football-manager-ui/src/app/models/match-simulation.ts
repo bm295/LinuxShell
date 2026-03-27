@@ -12,6 +12,16 @@ export interface MatchEvent {
   description: string;
 }
 
+export interface MatchMvp {
+  playerId: string;
+  playerName: string;
+  clubName: string;
+  position: string;
+  squadNumber: number;
+  overallRating: number;
+  mvpAwards: number;
+}
+
 export interface PlayerDevelopmentChange {
   playerId: string;
   name: string;
@@ -61,6 +71,7 @@ export interface SimulatedMatchResult {
   awayTeam: string;
   score: MatchScore;
   matchEvents: MatchEvent[];
+  matchMvp: MatchMvp;
   seniorPlayerDevelopment: PlayerDevelopmentChange[];
   academyDevelopment: AcademyDevelopmentChange[];
   clubStanding: LeagueTableEntry;

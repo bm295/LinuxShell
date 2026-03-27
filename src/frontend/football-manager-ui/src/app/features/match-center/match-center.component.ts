@@ -28,6 +28,7 @@ export class MatchCenterComponent implements OnInit {
   readonly simulationResult = signal<SimulatedMatchResult | null>(null);
   readonly isLoading = signal(true);
   readonly isSimulating = signal(false);
+  readonly isStartingNextSeason = signal(false);
   readonly isReportModalOpen = signal(false);
   readonly activeReportTab = signal<MatchReportTab>('review');
   readonly errorMessage = signal<string | null>(null);
@@ -67,7 +68,7 @@ export class MatchCenterComponent implements OnInit {
     }
 
     if (!fixture) {
-      return `${dashboard.clubName} have reached the end of the current schedule.`;
+      return `${dashboard.clubName} have finished ${dashboard.seasonName}.`;
     }
 
     const opponent = fixture.homeClub === dashboard.clubName ? fixture.awayClub : fixture.homeClub;
@@ -82,7 +83,7 @@ export class MatchCenterComponent implements OnInit {
     }
 
     if (!fixture) {
-      return 'There is no unplayed fixture left in this save. Review the latest result and season standing instead.';
+      return 'The season schedule is complete. Start the next season to generate a fresh fixture list and continue the career.';
     }
 
     return `Round ${fixture.roundNumber} in ${dashboard.competitionName}. ${dashboard.momentumNote}`;
@@ -128,7 +129,7 @@ export class MatchCenterComponent implements OnInit {
   simulateMatch(): void {
     const gameId = this.gameId();
 
-    if (!gameId || !this.dashboard()?.nextFixture || this.isSimulating()) {
+    if (!gameId || !this.dashboard()?.nextFixture || this.isSimulating() || this.isStartingNextSeason()) {
       return;
     }
 
@@ -148,6 +149,33 @@ export class MatchCenterComponent implements OnInit {
       error: (error: HttpErrorResponse) => {
         this.errorMessage.set(error.error?.message ?? 'The match could not be simulated right now.');
         this.isSimulating.set(false);
+      }
+    });
+  }
+
+  startNextSeason(): void {
+    const gameId = this.gameId();
+
+    if (!gameId || this.dashboard()?.nextFixture || this.isSimulating() || this.isStartingNextSeason()) {
+      return;
+    }
+
+    this.isStartingNextSeason.set(true);
+    this.errorMessage.set(null);
+    this.actionMessage.set(null);
+    this.simulationResult.set(null);
+    this.isReportModalOpen.set(false);
+    this.activeReportTab.set('review');
+
+    this.api.startNextSeason(gameId).subscribe({
+      next: (result) => {
+        this.actionMessage.set(result.summary);
+        this.isStartingNextSeason.set(false);
+        this.loadDashboard(gameId);
+      },
+      error: (error: HttpErrorResponse) => {
+        this.errorMessage.set(error.error?.message ?? 'The next season could not be started right now.');
+        this.isStartingNextSeason.set(false);
       }
     });
   }

@@ -60,6 +60,7 @@ public sealed class MatchSimulationService(FootballManagerDbContext dbContext) :
         var clubNames = leagueClubs.ToDictionary(club => club.Id, club => club.Name);
         var matchEvents = new List<MatchEventDto>();
         var managedStarterIds = new HashSet<Guid>();
+        Player? managedMatchMvp = null;
         var resultClock = DateTime.UtcNow;
 
         foreach (var fixture in roundFixtures)
@@ -80,7 +81,7 @@ public sealed class MatchSimulationService(FootballManagerDbContext dbContext) :
                 awaySelection,
                 captureEvents: fixture.Id == managedFixture.Id);
 
-            fixture.Complete(simulation.HomeGoals, simulation.AwayGoals, resultClock.AddMinutes(fixture.RoundNumber));
+            fixture.Complete(simulation.HomeGoals, simulation.AwayGoals, simulation.MatchMvp, resultClock.AddMinutes(fixture.RoundNumber));
             ApplyPostMatchState(homeSelection, simulation.HomeGoals, simulation.AwayGoals, simulation.HomeScorers, simulation.HomeInjuries, matchEvents, fixture.Id == managedFixture.Id);
             ApplyPostMatchState(awaySelection, simulation.AwayGoals, simulation.HomeGoals, simulation.AwayScorers, simulation.AwayInjuries, matchEvents, fixture.Id == managedFixture.Id);
             ApplyMatchdayFinances(homeClub, awayClub, fixture.RoundNumber, resultClock.AddMinutes(fixture.RoundNumber));
@@ -91,6 +92,7 @@ public sealed class MatchSimulationService(FootballManagerDbContext dbContext) :
                 managedStarterIds = managedSelection.Starters
                     .Select(player => player.Id)
                     .ToHashSet();
+                managedMatchMvp = simulation.MatchMvp;
                 matchEvents.AddRange(simulation.Events);
             }
         }
@@ -114,12 +116,16 @@ public sealed class MatchSimulationService(FootballManagerDbContext dbContext) :
             .ToList();
         var seniorPlayerDevelopment = BuildSeniorPlayerDevelopment(selectedClub, seniorSnapshots, managedStarterIds);
         var academyDevelopment = BuildAcademyDevelopment(selectedClub, academySnapshots);
+        var matchMvp = BuildMatchMvp(
+            managedMatchMvp ?? throw new InvalidOperationException("The simulated match did not produce an MVP."),
+            gameSave.Season.Fixtures);
 
         return new SimulatedMatchResultDto(
             clubNames[managedFixture.HomeClubId],
             clubNames[managedFixture.AwayClubId],
             new MatchScoreDto(managedFixture.HomeGoals ?? 0, managedFixture.AwayGoals ?? 0),
             matchEvents,
+            matchMvp,
             seniorPlayerDevelopment,
             academyDevelopment,
             clubStanding,
@@ -131,6 +137,58 @@ public sealed class MatchSimulationService(FootballManagerDbContext dbContext) :
                     nextFixture.ScheduledAt,
                     nextFixture.RoundNumber),
             BuildSummary(selectedClub, clubStanding, managedFixture));
+    }
+
+    public async Task<StartNextSeasonResultDto?> StartNextSeasonAsync(Guid gameId, CancellationToken cancellationToken = default)
+    {
+        var gameSave = await dbContext.GameSaves
+            .Include(save => save.SelectedClub)
+                .ThenInclude(club => club!.League)
+                    .ThenInclude(league => league!.Clubs)
+            .Include(save => save.Season)
+                .ThenInclude(season => season!.Fixtures)
+            .SingleOrDefaultAsync(save => save.Id == gameId, cancellationToken);
+
+        if (gameSave?.SelectedClub?.League is null || gameSave.Season is null)
+        {
+            return null;
+        }
+
+        if (gameSave.Season.Fixtures.Any(fixture => !fixture.IsPlayed))
+        {
+            throw new InvalidOperationException("The current season still has unplayed fixtures.");
+        }
+
+        var league = gameSave.SelectedClub.League;
+        var nextSeasonNumber = await dbContext.Seasons
+            .Where(season => season.LeagueId == league.Id)
+            .CountAsync(cancellationToken) + 1;
+        var nextSeason = league.StartSeason($"Season {nextSeasonNumber}");
+        RoundRobinFixtureGenerator.BuildSeasonFixtures(
+            nextSeason,
+            league.Clubs.OrderBy(club => club.Name).ToList());
+        gameSave.AdvanceToSeason(nextSeason);
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        var clubNames = league.Clubs.ToDictionary(club => club.Id, club => club.Name);
+        var nextFixture = nextSeason.Fixtures
+            .Where(fixture => fixture.HomeClubId == gameSave.SelectedClubId || fixture.AwayClubId == gameSave.SelectedClubId)
+            .OrderBy(fixture => fixture.RoundNumber)
+            .ThenBy(fixture => fixture.ScheduledAt)
+            .FirstOrDefault();
+
+        return new StartNextSeasonResultDto(
+            nextSeason.Id,
+            nextSeason.Name,
+            nextFixture is null
+                ? null
+                : new NextFixtureDto(
+                    clubNames[nextFixture.HomeClubId],
+                    clubNames[nextFixture.AwayClubId],
+                    nextFixture.ScheduledAt,
+                    nextFixture.RoundNumber),
+            BuildNextSeasonSummary(gameSave.SelectedClub, nextSeason.Name, nextFixture, clubNames));
     }
 
     private static TeamSelection BuildTeamSelection(
@@ -211,6 +269,8 @@ public sealed class MatchSimulationService(FootballManagerDbContext dbContext) :
             events.Add(new MatchEventDto(90, "FullTime", $"Full time: {home.Club.Name} {homeGoals}-{awayGoals} {away.Club.Name}."));
         }
 
+        var matchMvp = PickMatchMvp(home, away, homeGoals, awayGoals, homeScorers, awayScorers);
+
         return new FixtureSimulation(
             homeGoals,
             awayGoals,
@@ -218,6 +278,7 @@ public sealed class MatchSimulationService(FootballManagerDbContext dbContext) :
             awayScorers,
             homeInjuries,
             awayInjuries,
+            matchMvp,
             events);
     }
 
@@ -397,6 +458,69 @@ public sealed class MatchSimulationService(FootballManagerDbContext dbContext) :
         return weightedPlayers[^1].Player;
     }
 
+    private static Player PickMatchMvp(
+        TeamSelection home,
+        TeamSelection away,
+        int homeGoals,
+        int awayGoals,
+        IReadOnlyDictionary<Guid, int> homeScorers,
+        IReadOnlyDictionary<Guid, int> awayScorers)
+    {
+        var candidates = home.Starters
+            .Select(player => new MvpCandidate(player, CalculateMvpScore(player, homeGoals, awayGoals, homeScorers)))
+            .Concat(away.Starters.Select(player => new MvpCandidate(player, CalculateMvpScore(player, awayGoals, homeGoals, awayScorers))))
+            .OrderByDescending(candidate => candidate.Score)
+            .ThenByDescending(candidate => candidate.Player.GetOverallRating())
+            .ThenByDescending(candidate => candidate.Player.Morale)
+            .ThenBy(candidate => candidate.Player.SquadNumber)
+            .ThenBy(candidate => candidate.Player.LastName)
+            .ThenBy(candidate => candidate.Player.FirstName)
+            .ToList();
+
+        return candidates[0].Player;
+    }
+
+    private static double CalculateMvpScore(
+        Player player,
+        int goalsFor,
+        int goalsAgainst,
+        IReadOnlyDictionary<Guid, int> scorerTallies)
+    {
+        var goals = scorerTallies.GetValueOrDefault(player.Id);
+        var overallImpact = player.GetOverallRating() * 0.22d;
+        var readinessImpact = (player.Fitness * 0.05d) + (player.Morale * 0.05d);
+        var technicalImpact = player.Position switch
+        {
+            PlayerPosition.Goalkeeper => (player.Defense * 0.62d) + (player.Passing * 0.18d),
+            PlayerPosition.Defender => (player.Defense * 0.48d) + (player.Passing * 0.18d) + (player.Attack * 0.08d),
+            PlayerPosition.Midfielder => (player.Passing * 0.40d) + (player.Attack * 0.22d) + (player.Defense * 0.12d),
+            PlayerPosition.Forward => (player.Attack * 0.44d) + (player.Passing * 0.18d),
+            _ => player.GetOverallRating() * 0.20d
+        };
+        var resultBonus = goalsFor.CompareTo(goalsAgainst) switch
+        {
+            > 0 => 8d,
+            0 => 3d,
+            _ => 0d
+        };
+        var cleanSheetBonus = goalsAgainst == 0
+            ? player.Position switch
+            {
+                PlayerPosition.Goalkeeper => 14d,
+                PlayerPosition.Defender => 10d,
+                PlayerPosition.Midfielder => 3d,
+                _ => 1d
+            }
+            : 0d;
+
+        return overallImpact
+               + readinessImpact
+               + technicalImpact
+               + (goals * 26d)
+               + cleanSheetBonus
+               + resultBonus;
+    }
+
     private static TacticalProfile ResolveTacticalProfile(Formation formation)
     {
         if (formation.Forwards >= 3)
@@ -502,8 +626,8 @@ public sealed class MatchSimulationService(FootballManagerDbContext dbContext) :
             .Select(player =>
             {
                 var snapshot = snapshots[player.Id];
-                var overallDelta = CalculateSeniorReportOverallDelta(player, snapshot);
-                var overallRating = Math.Clamp(snapshot.OverallRating + overallDelta, 1, 100);
+                var overallRating = player.GetOverallRating();
+                var overallDelta = overallRating - snapshot.OverallRating;
 
                 return new PlayerDevelopmentChangeDto(
                     player.Id,
@@ -546,8 +670,8 @@ public sealed class MatchSimulationService(FootballManagerDbContext dbContext) :
             .Select(player =>
             {
                 var snapshot = snapshots[player.Id];
-                var overallDelta = CalculateAcademyReportOverallDelta(player, snapshot);
-                var overallRating = Math.Clamp(snapshot.OverallRating + overallDelta, 1, 100);
+                var overallRating = player.GetOverallRating();
+                var overallDelta = overallRating - snapshot.OverallRating;
 
                 return new AcademyDevelopmentChangeDto(
                     player.Id,
@@ -581,89 +705,6 @@ public sealed class MatchSimulationService(FootballManagerDbContext dbContext) :
         }
     }
 
-    private static int CalculateSeniorReportOverallDelta(Player player, PlayerSnapshot snapshot)
-    {
-        var rawDelta = CalculateTechnicalDelta(
-                           player.Position,
-                           player.Attack - snapshot.Attack,
-                           player.Defense - snapshot.Defense,
-                           player.Passing - snapshot.Passing)
-                       + ((player.Fitness - snapshot.Fitness) * 0.10d)
-                       + ((player.Morale - snapshot.Morale) * 0.05d);
-
-        return NormalizeReportDelta(
-            rawDelta,
-            player.Fitness - snapshot.Fitness,
-            player.Attack - snapshot.Attack,
-            player.Passing - snapshot.Passing,
-            player.Defense - snapshot.Defense,
-            player.Morale - snapshot.Morale);
-    }
-
-    private static int CalculateAcademyReportOverallDelta(AcademyPlayer player, AcademySnapshot snapshot)
-    {
-        var rawDelta = CalculateTechnicalDelta(
-                           player.Position,
-                           player.Attack - snapshot.Attack,
-                           player.Defense - snapshot.Defense,
-                           player.Passing - snapshot.Passing)
-                       + ((player.Fitness - snapshot.Fitness) * 0.05d)
-                       + ((player.Morale - snapshot.Morale) * 0.05d)
-                       + ((player.DevelopmentProgress - snapshot.DevelopmentProgress) * 0.12d);
-
-        return NormalizeReportDelta(
-            rawDelta,
-            player.DevelopmentProgress - snapshot.DevelopmentProgress,
-            player.Attack - snapshot.Attack,
-            player.Passing - snapshot.Passing,
-            player.Defense - snapshot.Defense,
-            player.Fitness - snapshot.Fitness,
-            player.Morale - snapshot.Morale);
-    }
-
-    private static double CalculateTechnicalDelta(
-        PlayerPosition position,
-        int attackDelta,
-        int defenseDelta,
-        int passingDelta) =>
-        position switch
-        {
-            PlayerPosition.Goalkeeper => (attackDelta * 0.05d) + (defenseDelta * 0.75d) + (passingDelta * 0.20d),
-            PlayerPosition.Defender => (attackDelta * 0.15d) + (defenseDelta * 0.60d) + (passingDelta * 0.25d),
-            PlayerPosition.Midfielder => (attackDelta * 0.30d) + (defenseDelta * 0.25d) + (passingDelta * 0.45d),
-            PlayerPosition.Forward => (attackDelta * 0.60d) + (defenseDelta * 0.15d) + (passingDelta * 0.25d),
-            _ => (attackDelta + defenseDelta + passingDelta) / 3d
-        };
-
-    private static int NormalizeReportDelta(double rawDelta, params int[] fallbackSignals)
-    {
-        var roundedDelta = (int)Math.Round(rawDelta, MidpointRounding.AwayFromZero);
-        if (roundedDelta != 0)
-        {
-            return roundedDelta;
-        }
-
-        if (rawDelta > 0d)
-        {
-            return 1;
-        }
-
-        if (rawDelta < 0d)
-        {
-            return -1;
-        }
-
-        foreach (var signal in fallbackSignals)
-        {
-            if (signal != 0)
-            {
-                return Math.Sign(signal);
-            }
-        }
-
-        return 0;
-    }
-
     private static string BuildSummary(Club selectedClub, LeagueTableEntryDto clubStanding, Fixture managedFixture)
     {
         var goalsFor = managedFixture.HomeClubId == selectedClub.Id
@@ -681,6 +722,38 @@ public sealed class MatchSimulationService(FootballManagerDbContext dbContext) :
         };
 
         return $"{resultLead} and move to {ToOrdinal(clubStanding.Position)} on {clubStanding.Points} point(s).";
+    }
+
+    private static string BuildNextSeasonSummary(
+        Club selectedClub,
+        string seasonName,
+        Fixture? openingFixture,
+        IReadOnlyDictionary<Guid, string> clubNames)
+    {
+        if (openingFixture is null)
+        {
+            return $"{seasonName} is live for {selectedClub.Name}. The new fixture list is ready.";
+        }
+
+        var opponent = openingFixture.HomeClubId == selectedClub.Id
+            ? clubNames[openingFixture.AwayClubId]
+            : clubNames[openingFixture.HomeClubId];
+
+        return $"{seasonName} is ready. {selectedClub.Name} open against {opponent} in round {openingFixture.RoundNumber}.";
+    }
+
+    private static MatchMvpDto BuildMatchMvp(Player player, IEnumerable<Fixture> seasonFixtures)
+    {
+        var mvpAwards = seasonFixtures.Count(fixture => fixture.MatchMvpPlayerId == player.Id);
+
+        return new MatchMvpDto(
+            player.Id,
+            player.FullName,
+            player.Club?.Name ?? "No Club",
+            player.Position.ToString(),
+            player.SquadNumber,
+            player.GetOverallRating(),
+            mvpAwards);
     }
 
     private static string ToOrdinal(int number)
@@ -748,6 +821,8 @@ public sealed class MatchSimulationService(FootballManagerDbContext dbContext) :
 
     private sealed record PlayerInjury(Player Player, int Minute, int MatchesToMiss);
 
+    private sealed record MvpCandidate(Player Player, double Score);
+
     private sealed record PlayerSnapshot(
         int Attack,
         int Defense,
@@ -772,5 +847,6 @@ public sealed class MatchSimulationService(FootballManagerDbContext dbContext) :
         IReadOnlyDictionary<Guid, int> AwayScorers,
         IReadOnlyCollection<PlayerInjury> HomeInjuries,
         IReadOnlyCollection<PlayerInjury> AwayInjuries,
+        Player MatchMvp,
         IReadOnlyCollection<MatchEventDto> Events);
 }

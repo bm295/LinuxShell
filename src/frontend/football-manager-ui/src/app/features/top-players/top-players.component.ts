@@ -6,48 +6,55 @@ import { appPaths, resolveGameId } from '../../core/routing/app-paths';
 import { ActiveGameService } from '../../core/services/active-game.service';
 import { BootstrapApiService } from '../../core/services/bootstrap-api.service';
 import { ClubDashboard } from '../../models/club-dashboard';
-import { LeagueTableEntry } from '../../models/league';
+import { TopPlayer } from '../../models/league';
+
+interface RankedTopPlayer extends TopPlayer {
+  rank: number;
+}
 
 @Component({
-  selector: 'app-league-table',
+  selector: 'app-top-players',
   standalone: true,
   imports: [RouterLink],
-  templateUrl: './league-table.component.html',
-  styleUrl: './league-table.component.scss'
+  templateUrl: './top-players.component.html',
+  styleUrl: './top-players.component.scss'
 })
-export class LeagueTableComponent implements OnInit {
+export class TopPlayersComponent implements OnInit {
   private readonly api = inject(BootstrapApiService);
   private readonly activeGameService = inject(ActiveGameService);
   private readonly route = inject(ActivatedRoute);
 
   readonly gameId = signal<string | null>(null);
   readonly dashboard = signal<ClubDashboard | null>(null);
-  readonly table = signal<LeagueTableEntry[]>([]);
+  readonly topPlayers = signal<TopPlayer[]>([]);
   readonly isLoading = signal(true);
   readonly errorMessage = signal<string | null>(null);
-  readonly matchCenterLink = computed(() => this.gameId() ? appPaths.matchCenter : '/');
+  readonly leagueTableLink = computed(() => this.gameId() ? appPaths.leagueTable : '/');
   readonly fixturesLink = computed(() => this.gameId() ? appPaths.fixtures : '/');
-  readonly topPlayersLink = computed(() => this.gameId() ? appPaths.topPlayers : '/');
-  readonly currentClubRow = computed(() =>
-    this.table().find((entry) => entry.clubName === this.dashboard()?.clubName) ?? null);
-  readonly pressureRows = computed(() => {
-    const table = this.table();
-    const currentClub = this.dashboard()?.clubName;
-    const currentIndex = table.findIndex((entry) => entry.clubName === currentClub);
+  readonly matchCenterLink = computed(() => this.gameId() ? appPaths.matchCenter : '/');
+  readonly leaderboard = computed<RankedTopPlayer[]>(() =>
+    this.topPlayers().map((player, index) => ({
+      ...player,
+      rank: index + 1
+    })));
+  readonly leader = computed(() => this.topPlayers()[0] ?? null);
+  readonly managedClubEntries = computed(() => {
+    const clubName = this.dashboard()?.clubName;
 
-    if (currentIndex < 0) {
-      return table.slice(0, 3);
+    if (!clubName) {
+      return [];
     }
 
-    const start = Math.max(0, currentIndex - 1);
-    return table.slice(start, Math.min(table.length, currentIndex + 2));
+    return this.topPlayers().filter((player) => player.clubName === clubName);
   });
+  readonly totalAwardsOnBoard = computed(() =>
+    this.topPlayers().reduce((total, player) => total + player.mvpAwards, 0));
 
   ngOnInit(): void {
     const gameId = resolveGameId(this.activeGameService, this.route);
 
     if (!gameId) {
-      this.errorMessage.set('Missing game identifier. Open a save before viewing the league table.');
+      this.errorMessage.set('Missing game identifier. Open a save before viewing top players.');
       this.isLoading.set(false);
       return;
     }
@@ -62,16 +69,16 @@ export class LeagueTableComponent implements OnInit {
 
     forkJoin({
       dashboard: this.api.getClubDashboard(gameId),
-      table: this.api.getLeagueTable(gameId)
+      topPlayers: this.api.getTopPlayers(gameId)
     }).subscribe({
-      next: ({ dashboard, table }) => {
+      next: ({ dashboard, topPlayers }) => {
         this.dashboard.set(dashboard);
-        this.table.set(table);
+        this.topPlayers.set(topPlayers);
         this.activeGameService.syncFromDashboard(gameId, dashboard);
         this.isLoading.set(false);
       },
       error: () => {
-        this.errorMessage.set('The league table is unavailable right now. Reload the save and try again.');
+        this.errorMessage.set('The top players board is unavailable right now. Reload the save and try again.');
         this.isLoading.set(false);
       }
     });

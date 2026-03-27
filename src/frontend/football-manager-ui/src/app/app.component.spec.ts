@@ -77,7 +77,7 @@ describe('AppComponent', () => {
     const leagueMenuItems = fixture.nativeElement.querySelectorAll('.league-menu .nav-menu-panel button');
     const leagueMenuLabels = [...leagueMenuItems].map((item) => item.textContent?.trim());
 
-    expect(leagueMenuItems.length).toBe(3);
-    expect(leagueMenuLabels).toEqual(['Match Center', 'League Table', 'Fixtures']);
+    expect(leagueMenuItems.length).toBe(4);
+    expect(leagueMenuLabels).toEqual(['Match Center', 'League Table', 'Fixtures', 'Top Players']);
   });
 });

@@ -24,6 +24,7 @@ Wins
 Draws  
 Losses  
 Points
+SeasonMvpAwards
 
 ---
 
@@ -33,6 +34,8 @@ GET /api/league/table
 
 GET /api/fixtures
 
+GET /api/league/top-players
+
 ---
 
 # Frontend Tasks
@@ -41,11 +44,18 @@ Create pages:
 
 League Table  
 Fixtures
+Top Players
 
 Show:
 
 league standings  
 results history
+top 10 current-season players by MVP awards
+
+League navigation rules:
+
+- add `Top Players` under `League Menu`
+- the `Top Players` page must show players ordered by season MVP awards in descending order
 
 ---
 
@@ -55,18 +65,19 @@ Extend the home page with league drama and season progression.
 
 Layout changes:
 
-- add `League Table` and `Fixtures` to the top menu
+- group `League Table` and `Fixtures` under `League Menu` in the top menu
+- add `Top Players` to the league navigation
 - add a compact league table snapshot showing the managed club and nearby positions
 - add a season progress panel showing played matches and remaining fixtures
 - add a rivalry or title-race panel highlighting nearby competitors
-- add quick links to full standings and fixture history
+- add quick links to full standings, fixture history, and top players
 
 Interaction flow:
 
 1 User opens `Home`
 2 User immediately sees where the club stands in the season story
 3 User reviews season progress and current league position
-4 User opens `League Table` or `Fixtures` from summary cards
+4 User opens `League Table`, `Fixtures`, or `Top Players` from summary cards or the `League Menu`
 5 After matches are played, the home page refreshes the standings snapshot and fixture timeline
 
 Presentation rules:
@@ -84,3 +95,4 @@ The home page should now summarize both club state and league state with a compe
 Player can:
 
 play matches through a season.
+view the season MVP leaderboard through `Top Players`.

@@ -195,6 +195,10 @@ namespace FootballManager.Infrastructure.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_played");
 
+                    b.Property<Guid?>("MatchMvpPlayerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("match_mvp_player_id");
+
                     b.Property<DateTime?>("PlayedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("played_at");
@@ -216,6 +220,8 @@ namespace FootballManager.Infrastructure.Persistence.Migrations
                     b.HasIndex("AwayClubId");
 
                     b.HasIndex("HomeClubId");
+
+                    b.HasIndex("MatchMvpPlayerId");
 
                     b.HasIndex("SeasonId", "RoundNumber", "HomeClubId", "AwayClubId")
                         .IsUnique();
@@ -569,6 +575,11 @@ namespace FootballManager.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("FootballManager.Domain.Entities.Player", "MatchMvpPlayer")
+                        .WithMany()
+                        .HasForeignKey("MatchMvpPlayerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("FootballManager.Domain.Entities.Season", "Season")
                         .WithMany("Fixtures")
                         .HasForeignKey("SeasonId")
@@ -578,6 +589,8 @@ namespace FootballManager.Infrastructure.Persistence.Migrations
                     b.Navigation("AwayClub");
 
                     b.Navigation("HomeClub");
+
+                    b.Navigation("MatchMvpPlayer");
 
                     b.Navigation("Season");
                 });

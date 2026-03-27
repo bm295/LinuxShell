@@ -75,11 +75,12 @@ internal static class LineupPlanner
 
         var starters = new List<Player>();
         var preferredIds = preferredStarterIds.Distinct().ToHashSet();
+        var selectedPlayerIds = new HashSet<Guid>();
 
-        starters.AddRange(PickPlayers(club, PlayerPosition.Goalkeeper, formation.Goalkeepers, preferredIds));
-        starters.AddRange(PickPlayers(club, PlayerPosition.Defender, formation.Defenders, preferredIds));
-        starters.AddRange(PickPlayers(club, PlayerPosition.Midfielder, formation.Midfielders, preferredIds));
-        starters.AddRange(PickPlayers(club, PlayerPosition.Forward, formation.Forwards, preferredIds));
+        starters.AddRange(PickPlayers(club, PlayerPosition.Goalkeeper, formation.Goalkeepers, preferredIds, selectedPlayerIds));
+        starters.AddRange(PickPlayers(club, PlayerPosition.Defender, formation.Defenders, preferredIds, selectedPlayerIds));
+        starters.AddRange(PickPlayers(club, PlayerPosition.Midfielder, formation.Midfielders, preferredIds, selectedPlayerIds));
+        starters.AddRange(PickPlayers(club, PlayerPosition.Forward, formation.Forwards, preferredIds, selectedPlayerIds));
         return starters;
     }
 
@@ -132,19 +133,39 @@ internal static class LineupPlanner
         Club club,
         PlayerPosition position,
         int requiredCount,
-        IReadOnlySet<Guid> preferredIds)
+        IReadOnlySet<Guid> preferredIds,
+        ISet<Guid> selectedPlayerIds)
     {
         var players = club.Players
-            .Where(player => player.Position == position && player.IsAvailableForSelection())
+            .Where(player => player.Position == position &&
+                             player.IsAvailableForSelection() &&
+                             !selectedPlayerIds.Contains(player.Id))
             .OrderByDescending(player => (preferredIds.Contains(player.Id) ? 100 : 0) + GetStarterScore(player))
             .ThenBy(player => player.SquadNumber)
             .Take(requiredCount)
             .ToList();
 
+        if (players.Count < requiredCount)
+        {
+            players.AddRange(
+                club.Players
+                    .Where(player => player.IsAvailableForSelection() &&
+                                     !selectedPlayerIds.Contains(player.Id) &&
+                                     players.All(selectedPlayer => selectedPlayer.Id != player.Id))
+                    .OrderBy(player => ResolveFallbackRank(position, player.Position))
+                    .ThenByDescending(player => (preferredIds.Contains(player.Id) ? 100 : 0) + GetStarterScore(player))
+                    .ThenBy(player => player.SquadNumber)
+                    .Take(requiredCount - players.Count));
+        }
+
         if (players.Count != requiredCount)
         {
-            throw new InvalidOperationException(
-                $"The squad does not have enough available {position.ToString().ToLowerInvariant()}s to fill the lineup.");
+            throw new InvalidOperationException("The squad does not have enough available players to fill the lineup.");
+        }
+
+        foreach (var player in players)
+        {
+            selectedPlayerIds.Add(player.Id);
         }
 
         return players;
@@ -190,4 +211,31 @@ internal static class LineupPlanner
                 $"{formationName} requires {requiredCount} {position.ToString().ToLowerInvariant()}(s).");
         }
     }
+
+    private static int ResolveFallbackRank(PlayerPosition requiredPosition, PlayerPosition candidatePosition) =>
+        requiredPosition switch
+        {
+            PlayerPosition.Goalkeeper => candidatePosition == PlayerPosition.Goalkeeper ? 0 : 1,
+            PlayerPosition.Defender => candidatePosition switch
+            {
+                PlayerPosition.Defender => 0,
+                PlayerPosition.Midfielder => 1,
+                PlayerPosition.Forward => 2,
+                _ => 3
+            },
+            PlayerPosition.Midfielder => candidatePosition switch
+            {
+                PlayerPosition.Midfielder => 0,
+                PlayerPosition.Defender => 1,
+                PlayerPosition.Forward => 2,
+                _ => 3
+            },
+            _ => candidatePosition switch
+            {
+                PlayerPosition.Forward => 0,
+                PlayerPosition.Midfielder => 1,
+                PlayerPosition.Defender => 2,
+                _ => 3
+            }
+        };
 }

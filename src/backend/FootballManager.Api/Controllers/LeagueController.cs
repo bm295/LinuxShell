@@ -24,4 +24,21 @@ public sealed class LeagueController(ILeagueOverviewService leagueOverviewServic
         var table = await leagueOverviewService.GetLeagueTableAsync(gameId, cancellationToken);
         return table is null ? NotFound() : Ok(table);
     }
+
+    [HttpGet("top-players")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<IReadOnlyCollection<TopPlayerDto>>> GetTopPlayers(
+        [FromQuery] Guid gameId,
+        CancellationToken cancellationToken)
+    {
+        if (gameId == Guid.Empty)
+        {
+            return BadRequest(new { message = "gameId is required." });
+        }
+
+        var topPlayers = await leagueOverviewService.GetTopPlayersAsync(gameId, cancellationToken);
+        return topPlayers is null ? NotFound() : Ok(topPlayers);
+    }
 }

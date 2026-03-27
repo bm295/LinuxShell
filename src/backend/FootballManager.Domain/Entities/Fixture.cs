@@ -59,15 +59,24 @@ public sealed class Fixture
 
     public int? AwayGoals { get; private set; }
 
+    public Guid? MatchMvpPlayerId { get; private set; }
+
+    public Player? MatchMvpPlayer { get; private set; }
+
     public DateTime? PlayedAt { get; private set; }
 
     public DateTime CreatedAt { get; private set; }
 
-    public void Complete(int homeGoals, int awayGoals, DateTime playedAt)
+    public void Complete(int homeGoals, int awayGoals, Player matchMvp, DateTime playedAt)
     {
         if (IsPlayed)
         {
             throw new InvalidOperationException("This fixture has already been played.");
+        }
+
+        if (matchMvp is null)
+        {
+            throw new ArgumentNullException(nameof(matchMvp));
         }
 
         if (homeGoals < 0)
@@ -80,8 +89,15 @@ public sealed class Fixture
             throw new ArgumentOutOfRangeException(nameof(awayGoals), "Goals cannot be negative.");
         }
 
+        if (matchMvp.ClubId != HomeClubId && matchMvp.ClubId != AwayClubId)
+        {
+            throw new InvalidOperationException("The match MVP must belong to one of the clubs in the fixture.");
+        }
+
         HomeGoals = homeGoals;
         AwayGoals = awayGoals;
+        MatchMvpPlayer = matchMvp;
+        MatchMvpPlayerId = matchMvp.Id;
         PlayedAt = playedAt;
         IsPlayed = true;
     }

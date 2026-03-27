@@ -110,15 +110,15 @@ export class HomeComponent implements OnInit, OnDestroy {
     const fixture = dashboard?.nextFixture;
 
     if (!currentClub) {
-      return 'Choose your club and begin the climb.';
+      return 'Choose your club. Start the climb.';
     }
 
     if (!fixture) {
-      return `${currentClub} are waiting on the next turn of the calendar.`;
+      return `${currentClub} await the next fixture.`;
     }
 
     const opponent = fixture.homeClub === currentClub ? fixture.awayClub : fixture.homeClub;
-    return `${currentClub} have ${opponent} next.`;
+    return `Next up: ${opponent}.`;
   });
   readonly heroCopy = computed(() => this.activeGame()
     ? (this.activeDashboard()?.momentumNote ?? 'Everything now points toward the next whistle. Settle the XI and play the match that matters.')

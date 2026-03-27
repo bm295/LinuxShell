@@ -24,6 +24,7 @@ Outputs:
 
 Score  
 Events
+MatchMvp
 
 ---
 
@@ -37,6 +38,7 @@ HomeTeam
 AwayTeam  
 Score  
 MatchEvents  
+MatchMvp  
 SeniorPlayerDevelopment  
 AcademyDevelopment
 
@@ -48,6 +50,7 @@ LeagueTable
 PlayerFitness  
 Morale  
 Injuries
+SeasonMvpAwardTotals
 
 ---
 
@@ -63,6 +66,7 @@ Features:
 - simulate match
 - after simulation, open a post-match pop-up
 - display a result banner in the first tab
+- display the match MVP in the first tab
 - display match events under the banner in the first tab
 - display a senior player development tab
 - display an academy development tab
@@ -71,7 +75,7 @@ Post-match pop-up rules:
 
 - the pop-up opens immediately after the match simulation completes
 - the pop-up contains exactly 3 tabs
-- tab 1 is the match review tab with a banner panel at the top and match events listed below it
+- tab 1 is the match review tab with a banner panel at the top, the match MVP in the summary area, and match events listed below it
 - tab 2 is the player development tab showing how each senior squad player's stats increased or decreased after the match
 - tab 3 is the academy development tab showing which youth players improved after the match
 - the player should be able to review all 3 tabs before closing the pop-up
@@ -96,7 +100,7 @@ Interaction flow:
 2 User immediately feels that the next meaningful event is the upcoming match
 3 User sees the next fixture and selects the match action
 4 User is routed to `Match Center`
-5 After simulation, a post-match pop-up opens with tabs for match review, senior player development, and academy development
+5 After simulation, a post-match pop-up opens with tabs for match review, senior player development, and academy development, and the match review tab shows the result plus the match MVP
 6 After the pop-up is closed, the home page updates recent result, morale, and fixture status summaries
 
 Presentation rules:
@@ -115,7 +119,8 @@ Player can:
 
 1 simulate match
 2 see score
-3 review match events in a post-match pop-up
-4 review senior squad development changes after the match
-5 review academy development changes after the match
-6 see standings update
+3 see the match MVP after the result
+4 review match events in a post-match pop-up
+5 review senior squad development changes after the match
+6 review academy development changes after the match
+7 see standings update

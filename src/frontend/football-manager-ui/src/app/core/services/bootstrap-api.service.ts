@@ -10,9 +10,10 @@ import { CreateNewGameResponse } from '../../models/create-new-game-response';
 import { FinanceSummary } from '../../models/finance';
 import { GameSaveSummary, LoadGameResponse } from '../../models/game-save';
 import { HealthStatus } from '../../models/health-status';
-import { FixtureSummary, LeagueTableEntry } from '../../models/league';
+import { FixtureSummary, LeagueTableEntry, TopPlayer } from '../../models/league';
 import { Lineup, LineupEditor, UpdateLineupRequest } from '../../models/lineup';
 import { SimulatedMatchResult } from '../../models/match-simulation';
+import { StartNextSeasonResult } from '../../models/season-transition';
 import { PlayerDetail, SquadPlayer, UpdatePlayerPositionRequest } from '../../models/squad';
 import { TransferActionResult, TransferMarket } from '../../models/transfer-market';
 
@@ -69,6 +70,10 @@ export class BootstrapApiService {
     return this.http.get<FixtureSummary[]>(`/api/fixtures?gameId=${encodeURIComponent(gameId)}`);
   }
 
+  getTopPlayers(gameId: string): Observable<TopPlayer[]> {
+    return this.http.get<TopPlayer[]>(`/api/league/top-players?gameId=${encodeURIComponent(gameId)}`);
+  }
+
   getSquad(gameId: string): Observable<SquadPlayer[]> {
     return this.http.get<SquadPlayer[]>(`/api/squad?gameId=${encodeURIComponent(gameId)}`);
   }
@@ -93,6 +98,10 @@ export class BootstrapApiService {
 
   simulateNextMatch(gameId: string): Observable<SimulatedMatchResult> {
     return this.http.post<SimulatedMatchResult>(`/api/match/simulate-next?gameId=${encodeURIComponent(gameId)}`, {});
+  }
+
+  startNextSeason(gameId: string): Observable<StartNextSeasonResult> {
+    return this.http.post<StartNextSeasonResult>(`/api/match/start-next-season?gameId=${encodeURIComponent(gameId)}`, {});
   }
 
   getTransferMarket(gameId: string): Observable<TransferMarket> {

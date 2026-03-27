@@ -70,6 +70,27 @@ public sealed class GameSave
         return Lineup;
     }
 
+    public void AdvanceToSeason(Season season)
+    {
+        if (season is null)
+        {
+            throw new ArgumentNullException(nameof(season));
+        }
+
+        var currentDefaultName = BuildDefaultName(SelectedClub?.Name, Season?.Name);
+        var shouldRefreshDefaultName = string.IsNullOrWhiteSpace(SaveName) ||
+                                       string.Equals(SaveName, currentDefaultName, StringComparison.Ordinal);
+
+        Season = season;
+        SeasonId = season.Id;
+        LastSavedAt = DateTime.UtcNow;
+
+        if (shouldRefreshDefaultName)
+        {
+            SaveName = BuildDefaultName(SelectedClub?.Name, season.Name);
+        }
+    }
+
     private static string BuildDefaultName(string? clubName, string? seasonName)
     {
         var club = string.IsNullOrWhiteSpace(clubName) ? "Club Journey" : clubName.Trim();

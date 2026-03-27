@@ -48,9 +48,12 @@
 
 .intro-card h1 {
   margin: 0;
-  max-width: 14ch;
-  font-size: clamp(2.4rem, 6vw, 4.1rem);
-  line-height: 0.95;
+  max-width: 100%;
+  font-size: clamp(1.95rem, 4.6vw, 3.2rem);
+  line-height: 1.05;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .hero-loading {
@@ -567,7 +570,7 @@ h2 {
 
 @media (max-width: 640px) {
   .intro-card h1 {
-    max-width: none;
+    font-size: clamp(1.55rem, 7vw, 2.15rem);
   }
 
   .card-head {

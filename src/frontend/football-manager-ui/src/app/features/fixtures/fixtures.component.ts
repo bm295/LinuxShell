@@ -34,6 +34,7 @@ export class FixturesComponent implements OnInit {
   readonly errorMessage = signal<string | null>(null);
   readonly matchCenterLink = computed(() => this.gameId() ? appPaths.matchCenter : '/');
   readonly leagueTableLink = computed(() => this.gameId() ? appPaths.leagueTable : '/');
+  readonly topPlayersLink = computed(() => this.gameId() ? appPaths.topPlayers : '/');
   readonly playedCount = computed(() => this.fixtures().filter((fixture) => fixture.isPlayed).length);
   readonly remainingCount = computed(() => this.fixtures().filter((fixture) => !fixture.isPlayed).length);
   readonly currentRound = computed(() =>

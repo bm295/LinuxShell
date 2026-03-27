@@ -219,6 +219,51 @@ public sealed class GameFlowTests
     }
 
     [Fact]
+    public async Task AutoLineup_UsesAvailableFallbackPlayersWhenOnePositionGroupRunsShort()
+    {
+        await using var factory = new FootballManagerApiFactory();
+        using var client = factory.CreateClient();
+
+        var createdGame = await CreateArsenalGameAsync(client);
+        var initialSquad = await client.GetFromJsonAsync<List<SquadPlayerDto>>(
+            $"/api/squad?gameId={createdGame.GameId}");
+
+        Assert.NotNull(initialSquad);
+        var defendersToMove = initialSquad
+            .Where(player => player.Position == "Defender")
+            .OrderByDescending(player => player.SquadNumber)
+            .Take(3)
+            .ToList();
+
+        Assert.Equal(3, defendersToMove.Count);
+
+        foreach (var defender in defendersToMove)
+        {
+            var response = await client.PutAsJsonAsync(
+                $"/api/player/{defender.Id}/position?gameId={createdGame.GameId}",
+                new UpdatePlayerPositionRequestDto("Midfielder"));
+            response.EnsureSuccessStatusCode();
+        }
+
+        var dashboard = await client.GetFromJsonAsync<ClubDashboardDto>(
+            $"/api/club/dashboard?gameId={createdGame.GameId}");
+        var refreshedSquad = await client.GetFromJsonAsync<List<SquadPlayerDto>>(
+            $"/api/squad?gameId={createdGame.GameId}");
+
+        Assert.NotNull(dashboard);
+        Assert.Equal(11, dashboard.Lineup.StarterCount);
+
+        Assert.NotNull(refreshedSquad);
+        Assert.Equal(3, refreshedSquad.Count(player => player.Position == "Defender"));
+        Assert.Equal(11, refreshedSquad.Count(player => player.IsStarter));
+
+        var simulateResponse = await client.PostAsync(
+            $"/api/match/simulate-next?gameId={createdGame.GameId}",
+            content: null);
+        simulateResponse.EnsureSuccessStatusCode();
+    }
+
+    [Fact]
     public async Task SimulateNextMatch_PlaysManagedFixtureAndRefreshesClubState()
     {
         await using var factory = new FootballManagerApiFactory();
@@ -251,16 +296,21 @@ public sealed class GameFlowTests
         Assert.NotNull(simulation);
         Assert.NotEmpty(simulation.MatchEvents);
         Assert.Contains(simulation.MatchEvents, matchEvent => matchEvent.Type == "FullTime");
+        Assert.NotNull(simulation.MatchMvp);
+        Assert.False(string.IsNullOrWhiteSpace(simulation.MatchMvp.PlayerName));
+        Assert.True(simulation.MatchMvp.MvpAwards >= 1);
+        Assert.Equal(1, simulation.MatchMvp.MvpAwards);
         Assert.Equal(initialSquad.Count, simulation.SeniorPlayerDevelopment.Count);
         Assert.Equal(initialAcademy.Players.Count, simulation.AcademyDevelopment.Count);
         Assert.Contains(simulation.SeniorPlayerDevelopment, player => player.PlayedMatch);
-        Assert.All(simulation.SeniorPlayerDevelopment, player => Assert.NotEqual(0, player.OverallDelta));
         Assert.Contains(
             simulation.SeniorPlayerDevelopment,
             player => player.FitnessDelta != 0 || player.MoraleDelta != 0 ||
                       player.AttackDelta != 0 || player.DefenseDelta != 0 || player.PassingDelta != 0);
+        Assert.Contains(
+            simulation.SeniorPlayerDevelopment,
+            player => player.PlayedMatch && player.Age <= 21 && player.OverallDelta > 0);
         Assert.All(simulation.AcademyDevelopment, player => Assert.True(player.DevelopmentProgressDelta >= 3));
-        Assert.All(simulation.AcademyDevelopment, player => Assert.True(player.OverallDelta > 0));
         Assert.Equal(1, simulation.ClubStanding.Played);
         Assert.True(simulation.ClubStanding.Points is >= 0 and <= 3);
         Assert.False(string.IsNullOrWhiteSpace(simulation.Summary));
@@ -280,6 +330,17 @@ public sealed class GameFlowTests
         Assert.Equal(simulation.Score.AwayGoals, refreshedResult.AwayGoals);
 
         Assert.NotNull(refreshedSquad);
+        var refreshedSquadById = refreshedSquad.ToDictionary(player => player.Id);
+        Assert.All(simulation.SeniorPlayerDevelopment, change =>
+        {
+            var squadPlayer = refreshedSquadById[change.PlayerId];
+            Assert.Equal(change.Attack, squadPlayer.Attack);
+            Assert.Equal(change.Defense, squadPlayer.Defense);
+            Assert.Equal(change.Passing, squadPlayer.Passing);
+            Assert.Equal(change.Fitness, squadPlayer.Fitness);
+            Assert.Equal(change.Morale, squadPlayer.Morale);
+            Assert.Equal(change.OverallRating, squadPlayer.OverallRating);
+        });
         Assert.Contains(
             refreshedSquad,
             player => starterFitnessById.TryGetValue(player.Id, out var initialFitness) && player.Fitness < initialFitness);
@@ -392,6 +453,109 @@ public sealed class GameFlowTests
         Assert.Equal(4, refreshedFixtures.Count(fixture => fixture.IsPlayed));
         Assert.Equal(4, refreshedFixtures.Count(fixture => fixture.IsCurrentRound));
         Assert.Contains(refreshedFixtures, fixture => fixture.IsManagedClubFixture && fixture.IsPlayed);
+    }
+
+    [Fact]
+    public async Task StartNextSeason_AfterSeasonEnds_GeneratesFreshFixturesForTheSave()
+    {
+        await using var factory = new FootballManagerApiFactory();
+        using var client = factory.CreateClient();
+
+        var createdGame = await CreateArsenalGameAsync(client);
+        var initialFixtures = await client.GetFromJsonAsync<List<FixtureSummaryDto>>(
+            $"/api/fixtures?gameId={createdGame.GameId}");
+        var dashboard = await client.GetFromJsonAsync<ClubDashboardDto>(
+            $"/api/club/dashboard?gameId={createdGame.GameId}");
+
+        Assert.NotNull(initialFixtures);
+        Assert.NotNull(dashboard);
+
+        for (var round = 0; round < 20 && dashboard.NextFixture is not null; round++)
+        {
+            var simulateResponse = await client.PostAsync(
+                $"/api/match/simulate-next?gameId={createdGame.GameId}",
+                content: null);
+            Assert.True(
+                simulateResponse.IsSuccessStatusCode,
+                await simulateResponse.Content.ReadAsStringAsync());
+
+            dashboard = await client.GetFromJsonAsync<ClubDashboardDto>(
+                $"/api/club/dashboard?gameId={createdGame.GameId}");
+            Assert.NotNull(dashboard);
+        }
+
+        var finishedDashboard = dashboard;
+
+        Assert.Null(finishedDashboard.NextFixture);
+        Assert.Equal("Season 1", finishedDashboard.SeasonName);
+
+        var startSeasonResponse = await client.PostAsync(
+            $"/api/match/start-next-season?gameId={createdGame.GameId}",
+            content: null);
+        startSeasonResponse.EnsureSuccessStatusCode();
+
+        var startSeason = await startSeasonResponse.Content.ReadFromJsonAsync<StartNextSeasonResultDto>();
+        var refreshedDashboard = await client.GetFromJsonAsync<ClubDashboardDto>(
+            $"/api/club/dashboard?gameId={createdGame.GameId}");
+        var refreshedFixtures = await client.GetFromJsonAsync<List<FixtureSummaryDto>>(
+            $"/api/fixtures?gameId={createdGame.GameId}");
+        var saveLibrary = await client.GetFromJsonAsync<LoadGameResponseDto>(
+            $"/api/game/load?gameId={createdGame.GameId}");
+
+        Assert.NotNull(startSeason);
+        Assert.Equal("Season 2", startSeason.SeasonName);
+        Assert.NotNull(startSeason.NextFixture);
+        Assert.False(string.IsNullOrWhiteSpace(startSeason.Summary));
+
+        Assert.NotNull(refreshedDashboard);
+        Assert.Equal("Season 2", refreshedDashboard.SeasonName);
+        Assert.NotNull(refreshedDashboard.NextFixture);
+        Assert.Equal(0, refreshedDashboard.Points);
+
+        Assert.NotNull(refreshedFixtures);
+        Assert.Equal(initialFixtures.Count, refreshedFixtures.Count);
+        Assert.DoesNotContain(refreshedFixtures, fixture => fixture.IsPlayed);
+        Assert.Equal(4, refreshedFixtures.Count(fixture => fixture.IsCurrentRound));
+
+        Assert.NotNull(saveLibrary);
+        Assert.NotNull(saveLibrary.SelectedSave);
+        Assert.Equal("Season 2", saveLibrary.SelectedSave.SeasonName);
+    }
+
+    [Fact]
+    public async Task TopPlayersEndpoint_ReturnsCurrentSeasonMvpLeaderboard()
+    {
+        await using var factory = new FootballManagerApiFactory();
+        using var client = factory.CreateClient();
+
+        var createdGame = await CreateArsenalGameAsync(client);
+
+        var simulateResponse = await client.PostAsync(
+            $"/api/match/simulate-next?gameId={createdGame.GameId}",
+            content: null);
+        simulateResponse.EnsureSuccessStatusCode();
+
+        var simulation = await simulateResponse.Content.ReadFromJsonAsync<SimulatedMatchResultDto>();
+        var topPlayers = await client.GetFromJsonAsync<List<TopPlayerDto>>(
+            $"/api/league/top-players?gameId={createdGame.GameId}");
+
+        Assert.NotNull(simulation);
+        Assert.NotNull(topPlayers);
+        Assert.NotEmpty(topPlayers);
+        Assert.True(topPlayers.Count <= 10);
+        Assert.Equal(4, topPlayers.Sum(player => player.MvpAwards));
+        Assert.Contains(topPlayers, player => player.PlayerId == simulation.MatchMvp.PlayerId);
+        Assert.All(topPlayers, player =>
+        {
+            Assert.False(string.IsNullOrWhiteSpace(player.PlayerName));
+            Assert.False(string.IsNullOrWhiteSpace(player.ClubName));
+            Assert.True(player.MvpAwards > 0);
+        });
+
+        for (var index = 1; index < topPlayers.Count; index++)
+        {
+            Assert.True(topPlayers[index - 1].MvpAwards >= topPlayers[index].MvpAwards);
+        }
     }
 
     [Fact]
@@ -556,7 +720,6 @@ public sealed class GameFlowTests
         Assert.NotNull(simulation);
         Assert.Equal(initialAcademy.Players.Count, simulation.AcademyDevelopment.Count);
         Assert.All(simulation.AcademyDevelopment, player => Assert.True(player.DevelopmentProgressDelta >= 3));
-        Assert.All(simulation.AcademyDevelopment, player => Assert.True(player.OverallDelta > 0));
         Assert.Contains(
             simulation.AcademyDevelopment,
             player => player.PlayerId == trackedProspect.PlayerId && player.DevelopmentProgressDelta > 0);
@@ -569,6 +732,13 @@ public sealed class GameFlowTests
             academyAfterMatch.Players,
             player => player.PlayerId == trackedProspect.PlayerId);
         Assert.True(progressedProspect.DevelopmentProgress >= initialDevelopment);
+        var academyPlayersById = academyAfterMatch.Players.ToDictionary(player => player.PlayerId);
+        Assert.All(simulation.AcademyDevelopment, change =>
+        {
+            var academyPlayer = academyPlayersById[change.PlayerId];
+            Assert.Equal(change.OverallRating, academyPlayer.OverallRating);
+            Assert.Equal(change.DevelopmentProgress, academyPlayer.DevelopmentProgress);
+        });
 
         var promotionCandidate = academyAfterMatch.Players
             .OrderByDescending(player => player.IsPromotionReady)

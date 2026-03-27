@@ -22,9 +22,15 @@
           <button
             type="button"
             class="primary-button"
-            [disabled]="!data.nextFixture || isSimulating()"
-            (click)="simulateMatch()">
-            {{ isSimulating() ? 'Simulating Match...' : (data.nextFixture ? 'Simulate Next Match' : 'No Match Ready') }}
+            [disabled]="isSimulating() || isStartingNextSeason()"
+            (click)="data.nextFixture ? simulateMatch() : startNextSeason()">
+            {{
+              isSimulating()
+                ? 'Simulating Match...'
+                : isStartingNextSeason()
+                  ? 'Starting New Season...'
+                  : (data.nextFixture ? 'Simulate Next Match' : 'Start New Season')
+            }}
           </button>
         </div>
       </section>
@@ -47,7 +53,7 @@
             </div>
           } @else {
             <h2>Schedule complete</h2>
-            <p class="supporting-copy">Every currently generated fixture has been played.</p>
+            <p class="supporting-copy">Every fixture in this season has been played. Use the main action above to generate the next season.</p>
           }
         </article>
 
@@ -121,6 +127,29 @@
           </div>
 
           <p class="supporting-copy">{{ result.summary }}</p>
+
+          <article class="mvp-card">
+            <div class="mvp-head">
+              <div>
+                <p class="label">Match MVP</p>
+                <h3>#{{ result.matchMvp.squadNumber }} {{ result.matchMvp.playerName }}</h3>
+                <p class="supporting-copy">{{ result.matchMvp.clubName }} | {{ result.matchMvp.position }}</p>
+              </div>
+
+              <span class="status-pill">Star of the match</span>
+            </div>
+
+            <div class="mvp-meta-grid">
+              <article>
+                <span class="summary-label">OVR</span>
+                <strong>{{ result.matchMvp.overallRating }}</strong>
+              </article>
+              <article>
+                <span class="summary-label">Season MVPs</span>
+                <strong>{{ result.matchMvp.mvpAwards }}</strong>
+              </article>
+            </div>
+          </article>
 
           <div class="standing-grid">
             <article>
@@ -205,6 +234,29 @@
                 <h3>{{ result.homeTeam }} {{ result.score.homeGoals }}-{{ result.score.awayGoals }} {{ result.awayTeam }}</h3>
                 <p class="supporting-copy">{{ result.summary }}</p>
               </div>
+
+              <article class="mvp-card">
+                <div class="mvp-head">
+                  <div>
+                    <p class="label">Match MVP</p>
+                    <h3>#{{ result.matchMvp.squadNumber }} {{ result.matchMvp.playerName }}</h3>
+                    <p class="supporting-copy">{{ result.matchMvp.clubName }} | {{ result.matchMvp.position }}</p>
+                  </div>
+
+                  <span class="status-pill">Star of the match</span>
+                </div>
+
+                <div class="mvp-meta-grid">
+                  <article>
+                    <span class="summary-label">OVR</span>
+                    <strong>{{ result.matchMvp.overallRating }}</strong>
+                  </article>
+                  <article>
+                    <span class="summary-label">Season MVPs</span>
+                    <strong>{{ result.matchMvp.mvpAwards }}</strong>
+                  </article>
+                </div>
+              </article>
 
               <div class="standing-grid">
                 <article>

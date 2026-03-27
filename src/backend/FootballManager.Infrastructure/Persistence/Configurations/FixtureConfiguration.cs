@@ -45,6 +45,9 @@ public sealed class FixtureConfiguration : IEntityTypeConfiguration<Fixture>
         builder.Property(fixture => fixture.AwayGoals)
             .HasColumnName("away_goals");
 
+        builder.Property(fixture => fixture.MatchMvpPlayerId)
+            .HasColumnName("match_mvp_player_id");
+
         builder.Property(fixture => fixture.PlayedAt)
             .HasColumnName("played_at")
             .HasColumnType("timestamp with time zone");
@@ -65,6 +68,11 @@ public sealed class FixtureConfiguration : IEntityTypeConfiguration<Fixture>
         builder.HasOne(fixture => fixture.AwayClub)
             .WithMany()
             .HasForeignKey(fixture => fixture.AwayClubId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(fixture => fixture.MatchMvpPlayer)
+            .WithMany()
+            .HasForeignKey(fixture => fixture.MatchMvpPlayerId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

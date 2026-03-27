@@ -89,6 +89,8 @@ Injury
 
 Relationships must follow domain-driven design principles.
 
+The domain model must support storing one MVP player for each completed match and aggregating MVP awards by player within a season.
+
 ---
 
 # 5. Database
@@ -135,12 +137,13 @@ Player
 
 Match
 - Get fixtures
-- Simulate match
+- Simulate match with post-match MVP data
 - Get results
 
 League
 - Get standings
 - Get league table
+- Get top players
 
 Transfer
 - List transfer players
@@ -165,6 +168,7 @@ Player Detail
 Tactics  
 Fixtures and Results  
 League Table  
+Top Players  
 Transfer Market  
 Finance Overview
 
@@ -187,6 +191,7 @@ Game state includes:
 - Fixtures
 - Matches
 - Standings
+- Season MVP award totals
 - Finances
 - Game progress
 

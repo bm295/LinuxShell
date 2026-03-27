@@ -27,6 +27,7 @@
 .result-panel h2,
 .report-modal h2,
 .report-banner h3,
+.mvp-card h3,
 .report-section h3,
 .empty-state h3 {
   margin: 0;
@@ -161,7 +162,8 @@
 
 .result-head,
 .events-head,
-.development-head {
+.development-head,
+.mvp-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -183,7 +185,6 @@
   place-items: center;
   padding: 1rem;
   background: rgba(24, 30, 34, 0.52);
-  backdrop-filter: blur(0.3rem);
 }
 
 .report-modal {
@@ -193,6 +194,7 @@
   gap: 1rem;
   overflow: auto;
   padding: 1.5rem;
+  box-shadow: none !important;
 }
 
 .modal-close {
@@ -247,8 +249,57 @@
   color: rgba(255, 241, 220, 0.88);
 }
 
+.report-banner h3 {
+  text-shadow: none;
+}
+
 .report-banner .standing-grid article {
   color: #1f2724;
+}
+
+.report-banner .mvp-card {
+  color: var(--text);
+  background: rgba(255, 248, 238, 0.98);
+  border-color: rgba(33, 48, 58, 0.12);
+}
+
+.report-banner .mvp-card .label {
+  color: var(--accent-strong);
+}
+
+.report-banner .mvp-card .supporting-copy,
+.report-banner .mvp-card .summary-label {
+  color: var(--muted);
+}
+
+.report-banner .mvp-card .status-pill {
+  color: #fff;
+  background: linear-gradient(135deg, rgba(128, 54, 33, 0.94), rgba(34, 57, 51, 0.9));
+}
+
+.mvp-card,
+.mvp-meta-grid {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.mvp-card {
+  padding: 1rem;
+  border-radius: 1.1rem;
+  border: 1px solid rgba(159, 74, 45, 0.14);
+  background: rgba(255, 250, 242, 0.92);
+}
+
+.mvp-meta-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.mvp-meta-grid article {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.9rem 1rem;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.88);
 }
 
 .event-list,
@@ -375,6 +426,7 @@
 @media (max-width: 640px) {
   .detail-grid,
   .standing-grid,
+  .mvp-meta-grid,
   .stat-change-grid {
     grid-template-columns: 1fr;
   }
@@ -382,6 +434,7 @@
   .result-head,
   .events-head,
   .development-head,
+  .mvp-head,
   .banner-panel {
     flex-direction: column;
   }

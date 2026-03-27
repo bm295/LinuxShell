@@ -11,6 +11,7 @@ import { MatchCenterComponent } from './features/match-center/match-center.compo
 import { NewGameComponent } from './features/new-game/new-game.component';
 import { PlayerDetailComponent } from './features/player-detail/player-detail.component';
 import { SquadComponent } from './features/squad/squad.component';
+import { TopPlayersComponent } from './features/top-players/top-players.component';
 import { TransferMarketComponent } from './features/transfer-market/transfer-market.component';
 
 const blockPendingPlayerDetailNavigation: CanDeactivateFn<PlayerDetailComponent> = (component) =>
@@ -90,6 +91,14 @@ export const routes: Routes = [
   {
     path: 'fixtures/:gameId',
     component: FixturesComponent
+  },
+  {
+    path: 'top-players',
+    component: TopPlayersComponent
+  },
+  {
+    path: 'top-players/:gameId',
+    component: TopPlayersComponent
   },
   {
     path: 'transfer-market',

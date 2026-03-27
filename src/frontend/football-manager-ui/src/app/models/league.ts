@@ -25,3 +25,13 @@ export interface FixtureSummary {
   isManagedClubFixture: boolean;
   isCurrentRound: boolean;
 }
+
+export interface TopPlayer {
+  playerId: string;
+  playerName: string;
+  clubName: string;
+  position: string;
+  squadNumber: number;
+  overallRating: number;
+  mvpAwards: number;
+}

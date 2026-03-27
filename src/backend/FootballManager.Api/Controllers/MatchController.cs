@@ -32,4 +32,29 @@ public sealed class MatchController(IMatchSimulationService matchSimulationServi
             return Conflict(new { message = exception.Message });
         }
     }
+
+    [HttpPost("start-next-season")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<StartNextSeasonResultDto>> StartNextSeason(
+        [FromQuery] Guid gameId,
+        CancellationToken cancellationToken)
+    {
+        if (gameId == Guid.Empty)
+        {
+            return BadRequest(new { message = "gameId is required." });
+        }
+
+        try
+        {
+            var result = await matchSimulationService.StartNextSeasonAsync(gameId, cancellationToken);
+            return result is null ? NotFound() : Ok(result);
+        }
+        catch (InvalidOperationException exception)
+        {
+            return Conflict(new { message = exception.Message });
+        }
+    }
 }
